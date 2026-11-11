@@ -11,6 +11,8 @@ from django.db import transaction
 from knowledge.services.ingest import search
 from support.models import Conversation, Message, MessageCitation, Ticket
 
+from . import sensitive
+from .drafts import draft_for_ticket
 from .llm import LLMError, get_answerer
 
 log = logging.getLogger(__name__)
@@ -18,6 +20,10 @@ log = logging.getLogger(__name__)
 HANDOFF_REPLY = (
     "I'm not sure about that one, so I've passed it to our team. "
     "A person will reply right here."
+)
+SENSITIVE_REPLY = (
+    "Because this involves your money or account, I've passed it to our team. "
+    "A person will check it and reply right here."
 )
 PERSON_REPLY = "Of course. I've passed you to our team, and a person will reply right here."
 WAITING_REPLY = "Thanks, a member of our team has your conversation and will reply here."
@@ -37,13 +43,23 @@ def wants_a_person(text: str) -> bool:
     return bool(HUMAN_REQUEST.search(text) and HUMAN_VERBS.search(text))
 
 
-def _hand_off(convo: Conversation, reason: str, confidence: float | None, text: str = HANDOFF_REPLY) -> Message:
+def _hand_off(
+    convo: Conversation, reason: str, confidence: float | None, text: str = HANDOFF_REPLY, detail: str = ""
+) -> Message:
     convo.status = Conversation.Status.ESCALATED
     convo.save(update_fields=["status"])
-    Ticket.objects.get_or_create(conversation=convo, defaults={"business": convo.business, "reason": reason})
-    return Message.objects.create(
+    reply = Message.objects.create(
         conversation=convo, sender=Message.Sender.AI, content=text, confidence=confidence
     )
+    ticket, created = Ticket.objects.get_or_create(
+        conversation=convo, defaults={"business": convo.business, "reason": reason, "reason_detail": detail}
+    )
+    if not created:  # the chat was handed off before and closed: reopen the same ticket
+        ticket.reason, ticket.reason_detail = reason, detail
+        ticket.status, ticket.closed_at, ticket.draft_outcome = Ticket.Status.PENDING, None, ""
+        ticket.save(update_fields=["reason", "reason_detail", "status", "closed_at", "draft_outcome"])
+    draft_for_ticket(ticket)
+    return reply
 
 
 def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
@@ -54,6 +70,18 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
     # Already with a person: the AI stays quiet.
     if convo.status == Conversation.Status.ESCALATED:
         reply = Message.objects.create(conversation=convo, sender=Message.Sender.AI, content=WAITING_REPLY)
+        return ChatResult(convo, reply, handed_off=True)
+
+    # A resolved chat that gets a new message is back with the AI.
+    if convo.status == Conversation.Status.RESOLVED:
+        convo.status = Conversation.Status.OPEN
+        convo.save(update_fields=["status"])
+
+    # Money-safety rule: these always go to a person, however confident retrieval is.
+    category = sensitive.detect(text)
+    if category:
+        with transaction.atomic():
+            reply = _hand_off(convo, Ticket.Reason.SENSITIVE, None, SENSITIVE_REPLY, category)
         return ChatResult(convo, reply, handed_off=True)
 
     if wants_a_person(text):

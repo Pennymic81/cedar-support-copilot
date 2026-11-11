@@ -42,6 +42,10 @@ class Message(models.Model):
     sender = models.CharField(max_length=10, choices=Sender.choices)
     content = models.TextField()
     confidence = models.FloatField(null=True, blank=True, help_text="Set on AI messages only")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="messages", help_text="The agent who sent it (agent messages only)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -70,7 +74,7 @@ class Ticket(models.Model):
     class Reason(models.TextChoices):
         LOW_CONFIDENCE = "low_confidence", "Low confidence"
         CUSTOMER_REQUESTED = "customer_requested", "Customer asked for a person"
-        SENSITIVE = "sensitive", "Involves the customer's money"
+        SENSITIVE = "sensitive", "Involves the customer's money or account"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -82,8 +86,18 @@ class Ticket(models.Model):
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="tickets"
     )
+    class DraftOutcome(models.TextChoices):
+        APPROVED = "approved", "Sent as drafted"
+        EDITED = "edited", "Edited before sending"
+        WRITTEN = "written", "Agent wrote their own"
+
     reason = models.CharField(max_length=20, choices=Reason.choices)
+    reason_detail = models.CharField(max_length=40, blank=True, help_text="e.g. which money-safety rule matched")
+    summary = models.TextField(blank=True)
     suggested_reply = models.TextField(blank=True, help_text="AI draft the agent can approve or edit")
+    draft_sources = models.ManyToManyField(Chunk, blank=True, related_name="drafts")
+    draft_grounded = models.BooleanField(default=False, help_text="True if the draft is based on a matching policy")
+    draft_outcome = models.CharField(max_length=10, choices=DraftOutcome.choices, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)

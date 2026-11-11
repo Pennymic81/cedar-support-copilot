@@ -11,7 +11,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 | 1 | Project setup: Django, Postgres + pgvector, data models, admin | ✅ Done |
 | 2 | Document upload: chunking, embeddings, injection guard, search API | ✅ Done |
 | 3 | Chat API: retrieval, answers with citations, "I don't know" and handoff | ✅ Done |
-| 4 | Human handoff: confidence threshold, ticket queue, drafted replies | ⏳ |
+| 4 | Human handoff: money-safety rule, agent inbox, drafted replies | ✅ Done |
 | 5 | Evals: test set, accuracy, citation accuracy, handoff rate | ⏳ |
 | 6 | Chat widget and analytics | ⏳ |
 | 7 | Deploy, demo video | ⏳ |
@@ -80,6 +80,12 @@ Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Cha
 | POST | `/api/search/` | `{"query": "...", "k": 5}` → closest chunks with scores |
 | POST | `/api/chat/` | **Public (widget).** `{"widget_key", "message", "conversation_token"?}` → reply, confidence, citations, `handed_off` |
 | GET | `/api/chat/<conversation_token>/?widget_key=…` | **Public (widget).** Chat history with citations |
+| GET | `/api/tickets/?status=pending&mine=true` | Agent inbox, oldest first |
+| GET | `/api/tickets/<id>/` | Ticket with summary, conversation, suggested reply and its sources |
+| POST | `/api/tickets/<id>/assign/` | Assign to yourself, or `{"user_id": n}` |
+| POST | `/api/tickets/<id>/reply/` | `{"use_draft": true}` sends the suggestion; `{"content": "..."}` sends your own or edited text; add `"close": true` to resolve |
+| POST | `/api/tickets/<id>/redraft/` | Regenerate the summary and draft |
+| POST | `/api/tickets/<id>/close/` | Resolve; the chat returns to the AI if the customer writes again |
 
 ## How ingestion works
 
@@ -96,11 +102,21 @@ Embeddings are pluggable via `EMBEDDING_PROVIDER`:
 
 1. The customer's message is saved.
 2. If the chat is already with a person, the AI stays quiet.
-3. If the customer asks for a person ("can I talk to someone?"), it hands off.
-4. Otherwise it retrieves the closest policy sections. The top score is the **confidence**.
-5. Below the business's threshold → **hand off**: the chat is escalated and a ticket is created.
-6. Otherwise the answer step writes a reply **only from those sections**, citing them as `[1]`, `[2]`. If the model says the sources don't answer it, or the model is down, it hands off instead of guessing.
-7. The reply is saved with its citations (document and section).
+3. **Money-safety rule:** failed charges, missing money, fraud, refunds and blocked accounts or cards always go to a person, however confident retrieval is. A policy can say "reversals arrive within 24 hours", but only a person can check what happened to *this* customer's money.
+4. If the customer asks for a person ("can I talk to someone?"), it hands off.
+5. Otherwise it retrieves the closest policy sections. The top score is the **confidence**.
+6. Below the business's threshold → **hand off**: the chat is escalated and a ticket is created.
+7. Otherwise the answer step writes a reply **only from those sections**, citing them as `[1]`, `[2]`. If the model says the sources don't answer it, or the model is down, it hands off instead of guessing.
+8. The reply is saved with its citations (document and section).
+
+## When a person takes over
+
+Every handoff creates (or reopens) a ticket with:
+- a one-line **summary**: why it was handed off, what the customer said, and the related policy;
+- a **suggested reply** built only from the matching policy, with its **sources**, ending with the right next step (e.g. asking for the transaction reference);
+- an honest placeholder instead of a guess when no policy matches; the agent must write that reply themselves.
+
+Agents approve the draft, edit it, or write their own. Each ticket records which (`draft_outcome`), so Day 6's analytics can show how often drafts are used as is.
 
 Answers are pluggable via `LLM_PROVIDER`:
 - `local` (default): no model, replies with the best-matching policy section. Grounded and cited, but not conversational.

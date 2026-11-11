@@ -19,8 +19,10 @@ class ConversationAdmin(admin.ModelAdmin):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ("id", "business", "reason", "status", "assigned_to", "created_at")
-    list_filter = ("business", "reason", "status")
+    list_display = ("id", "business", "reason", "reason_detail", "status", "assigned_to", "draft_outcome", "created_at")
+    list_filter = ("business", "reason", "status", "draft_outcome")
+    readonly_fields = ("summary", "suggested_reply", "draft_grounded", "draft_outcome", "created_at", "closed_at")
+    filter_horizontal = ("draft_sources",)
 
 
 @admin.register(MessageCitation)

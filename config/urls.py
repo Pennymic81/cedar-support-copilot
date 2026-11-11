@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 from core.views import health
 from knowledge.views import DocumentViewSet, search_view
+from support.agent_views import TicketViewSet
 from support.views import chat, conversation_history
 
 admin.site.site_header = "Cedar Support Copilot"
@@ -13,6 +14,7 @@ admin.site.site_title = "Cedar Copilot admin"
 
 router = DefaultRouter()
 router.register("documents", DocumentViewSet, basename="document")
+router.register("tickets", TicketViewSet, basename="ticket")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

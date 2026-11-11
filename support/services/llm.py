@@ -79,6 +79,19 @@ class OpenAICompatibleAnswerer:
         self.base_url = base_url.rstrip("/")
         self.model = model
 
+    def complete(self, messages: list[dict], max_tokens: int = 300) -> str:
+        try:
+            resp = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"model": self.model, "messages": messages, "temperature": 0.1, "max_tokens": max_tokens},
+                timeout=60,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
+        except (requests.RequestException, KeyError, IndexError, ValueError) as exc:
+            raise LLMError(f"Chat request failed: {exc}") from exc
+
     def answer(self, business_name: str, question: str, chunks, history=None) -> Draft:
         messages = [
             {
@@ -92,17 +105,7 @@ class OpenAICompatibleAnswerer:
             role = "user" if msg.sender == "customer" else "assistant"
             messages.append({"role": role, "content": msg.content})
         messages.append({"role": "user", "content": question})
-        try:
-            resp = requests.post(
-                f"{self.base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"model": self.model, "messages": messages, "temperature": 0.1, "max_tokens": 300},
-                timeout=60,
-            )
-            resp.raise_for_status()
-            text = resp.json()["choices"][0]["message"]["content"].strip()
-        except (requests.RequestException, KeyError, IndexError, ValueError) as exc:
-            raise LLMError(f"Chat request failed: {exc}") from exc
+        text = self.complete(messages)
         if NO_ANSWER in text:
             return Draft(text="", answered=False)
         return Draft(text=text, cited=parse_citations(text, len(chunks)) or [1])
