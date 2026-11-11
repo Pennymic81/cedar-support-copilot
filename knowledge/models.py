@@ -28,6 +28,9 @@ class Document(models.Model):
     flagged_lines = models.JSONField(
         default=list, blank=True, help_text="Lines removed by the prompt-injection guard"
     )
+    embedding_signature = models.CharField(
+        max_length=200, blank=True, help_text="Which embedding model produced this document's vectors"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

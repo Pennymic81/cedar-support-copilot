@@ -1,15 +1,21 @@
 """Answer generation from retrieved chunks.
 
-LLM_PROVIDER=openai -> any OpenAI-compatible /chat/completions API.
+LLM_PROVIDER=openai -> any OpenAI-compatible /chat/completions API (OpenAI, Gemini, Groq...).
 LLM_PROVIDER=local  -> no model: replies with the best-matching policy section.
+Without LLM_API_KEY the local answerer is used.
 """
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 
 import requests
 from django.conf import settings
+
+from core.http import post_json
+
+log = logging.getLogger(__name__)
 
 NO_ANSWER = "NO_ANSWER"
 
@@ -72,25 +78,41 @@ class LocalAnswerer:
 
 
 class OpenAICompatibleAnswerer:
-    def __init__(self, api_key: str, base_url: str, model: str):
+    def __init__(self, api_key: str, base_url: str, model: str, reasoning_effort: str = "",
+                 max_tokens: int = 2048, max_wait: float = 8.0):
         if not api_key:
             raise LLMError("LLM_API_KEY is not set.")
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.reasoning_effort = reasoning_effort
+        self.max_tokens = max_tokens
+        self.max_wait = max_wait  # seconds to wait on rate limits before giving up
 
-    def complete(self, messages: list[dict], max_tokens: int = 300) -> str:
+    def complete(self, messages: list[dict], max_tokens: int | None = None) -> str:
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.1,
+            "max_tokens": max_tokens or self.max_tokens,
+        }
+        if self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
         try:
-            resp = requests.post(
+            data = post_json(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"model": self.model, "messages": messages, "temperature": 0.1, "max_tokens": max_tokens},
-                timeout=60,
+                payload=payload,
+                max_wait=self.max_wait,
             )
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
-        except (requests.RequestException, KeyError, IndexError, ValueError) as exc:
+            choice = data["choices"][0]
+            content = (choice["message"].get("content") or "").strip()
+        except (requests.RequestException, KeyError, IndexError, ValueError, TypeError) as exc:
             raise LLMError(f"Chat request failed: {exc}") from exc
+        if not content:
+            # e.g. the reasoning used the whole token budget
+            raise LLMError(f"Empty reply (finish_reason={choice.get('finish_reason')}).")
+        return content
 
     def answer(self, business_name: str, question: str, chunks, history=None) -> Draft:
         messages = [
@@ -111,9 +133,23 @@ class OpenAICompatibleAnswerer:
         return Draft(text=text, cited=parse_citations(text, len(chunks)) or [1])
 
 
-def get_answerer():
+def llm_enabled() -> bool:
+    return settings.LLM_PROVIDER == "openai" and bool(settings.LLM_API_KEY)
+
+
+def get_answerer(max_wait: float | None = None):
+    if settings.LLM_PROVIDER == "openai" and not settings.LLM_API_KEY:
+        log.warning("LLM_PROVIDER=openai but LLM_API_KEY is empty; using the local answerer.")
+        return LocalAnswerer()
     if settings.LLM_PROVIDER == "local":
         return LocalAnswerer()
     if settings.LLM_PROVIDER == "openai":
-        return OpenAICompatibleAnswerer(settings.LLM_API_KEY, settings.LLM_API_BASE, settings.LLM_CHAT_MODEL)
+        return OpenAICompatibleAnswerer(
+            settings.LLM_API_KEY,
+            settings.LLM_API_BASE,
+            settings.LLM_CHAT_MODEL,
+            reasoning_effort=settings.LLM_REASONING_EFFORT,
+            max_tokens=settings.LLM_MAX_TOKENS,
+            max_wait=settings.LLM_RETRY_SECONDS if max_wait is None else max_wait,
+        )
     raise LLMError(f"Unknown LLM_PROVIDER: {settings.LLM_PROVIDER!r} (use 'local' or 'openai').")

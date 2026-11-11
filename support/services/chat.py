@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from django.conf import settings
 from django.db import transaction
 
+from knowledge.services.embeddings import EmbeddingError
 from knowledge.services.ingest import search
 from support.models import Conversation, Message, MessageCitation, Ticket
 
@@ -122,7 +123,11 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
             reply = _hand_off(convo, Ticket.Reason.CUSTOMER_REQUESTED, None, PERSON_REPLY)
         return ChatResult(convo, reply, handed_off=True)
 
-    chunks = search(business, text, k=settings.RETRIEVAL_TOP_K)
+    try:
+        chunks = search(business, text, k=settings.RETRIEVAL_TOP_K)
+    except EmbeddingError:
+        log.exception("Search failed; handing off")
+        chunks = []
     confidence = round(chunks[0].score, 3) if chunks else 0.0
 
     if confidence < business.effective_threshold:

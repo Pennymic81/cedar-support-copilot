@@ -11,6 +11,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import transaction
+from django.test.utils import override_settings
 
 from core.models import Business
 from evals.models import EvalQuestion, EvalResult, EvalRun, Outcome
@@ -109,6 +110,19 @@ def score(q: EvalQuestion, o: Observed) -> dict:
     }
 
 
+def current_config(business: Business, threshold: float | None = None) -> dict:
+    """What an eval run's result depends on. A run with a different config is stale."""
+    from knowledge.services.embeddings import get_embedder
+    from support.services.llm import llm_enabled
+
+    return {
+        "embedding": get_embedder().signature,
+        "llm": settings.LLM_CHAT_MODEL if llm_enabled() else "local",
+        "threshold": threshold if threshold is not None else business.effective_threshold,
+        "top_k": settings.RETRIEVAL_TOP_K,
+    }
+
+
 def run(business: Business, label: str, threshold: float | None = None, save: bool = True) -> EvalRun:
     questions = list(business.eval_questions.all())
     if not questions:
@@ -119,9 +133,11 @@ def run(business: Business, label: str, threshold: float | None = None, save: bo
         business.confidence_threshold = threshold  # in memory only, never saved
     try:
         rows = []
-        for q in questions:
-            o = observe(business, q.question)
-            rows.append((q, o, score(q, o)))
+        # No customer is waiting, so ride out free-tier rate limits instead of handing off.
+        with override_settings(LLM_RETRY_SECONDS=120):
+            for q in questions:
+                o = observe(business, q.question)
+                rows.append((q, o, score(q, o)))
     finally:
         business.confidence_threshold = original
 
@@ -129,12 +145,7 @@ def run(business: Business, label: str, threshold: float | None = None, save: bo
     run_obj = EvalRun(
         business=business,
         label=label,
-        config={
-            "embedding_provider": settings.EMBEDDING_PROVIDER,
-            "llm_provider": settings.LLM_PROVIDER,
-            "threshold": threshold if threshold is not None else business.effective_threshold,
-            "top_k": settings.RETRIEVAL_TOP_K,
-        },
+        config=current_config(business, threshold),
         total=len(rows),
         accuracy=sum(r[2]["correct"] for r in rows) / len(rows),
         routing_accuracy=sum(r[2]["routing_correct"] for r in rows) / len(rows),

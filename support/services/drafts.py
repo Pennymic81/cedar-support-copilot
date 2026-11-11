@@ -6,12 +6,13 @@ import re
 
 from django.conf import settings
 
+from knowledge.services.embeddings import EmbeddingError
 from knowledge.services.ingest import search
 from knowledge.services.llm_helpers import section_title
 from support.models import Message, Ticket
 
 from . import sensitive
-from .llm import LLMError, OpenAICompatibleAnswerer, format_sources, parse_citations, strip_heading
+from .llm import LLMError, format_sources, get_answerer, llm_enabled, parse_citations, strip_heading
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def _local_draft(ticket, msgs, chunks, grounded):
 
 
 def _model_draft(ticket, msgs, chunks):
-    answerer = OpenAICompatibleAnswerer(settings.LLM_API_KEY, settings.LLM_API_BASE, settings.LLM_CHAT_MODEL)
+    answerer = get_answerer()
     transcript = "\n".join(f"{m.sender}: {m.content}" for m in ticket.conversation.messages.all())
     prompt = DRAFT_PROMPT.format(
         business=ticket.business.name,
@@ -91,12 +92,16 @@ def _model_draft(ticket, msgs, chunks):
 def draft_for_ticket(ticket: Ticket) -> Ticket:
     """Fill in the ticket's summary, suggested reply and sources. Never raises."""
     query, msgs = _customer_text(ticket)
-    chunks = search(ticket.business, query, k=settings.RETRIEVAL_TOP_K) if query else []
+    try:
+        chunks = search(ticket.business, query, k=settings.RETRIEVAL_TOP_K) if query else []
+    except EmbeddingError:
+        log.exception("Search failed while drafting")
+        chunks = []
     grounded = bool(chunks) and chunks[0].score >= ticket.business.effective_threshold
 
     summary = reply = None
     sources = []
-    if settings.LLM_PROVIDER == "openai" and grounded:
+    if llm_enabled() and grounded:
         try:
             summary, reply, sources = _model_draft(ticket, msgs, chunks)
             grounded = reply != NO_POLICY_DRAFT

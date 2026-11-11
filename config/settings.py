@@ -112,19 +112,27 @@ REST_FRAMEWORK = {
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1")
-# "local" works offline with no key; "openai" uses any OpenAI-compatible embeddings API.
+# "local" works offline with no key; "gemini" uses Google's embeddings API;
+# "openai" uses any OpenAI-compatible embeddings API. Without LLM_API_KEY everything runs locally.
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 # Retrieval score needed to answer without a person. Scores depend on the embedding
 # model, so the default follows the provider; tune it with the eval set.
 DEFAULT_CONFIDENCE_THRESHOLD = float(
-    os.getenv("DEFAULT_CONFIDENCE_THRESHOLD") or ("0.21" if EMBEDDING_PROVIDER == "local" else "0.45")
+    os.getenv("DEFAULT_CONFIDENCE_THRESHOLD")
+    or ("0.21" if EMBEDDING_PROVIDER == "local" or not LLM_API_KEY else "0.45")
 )
 # "local" answers with the best-matching policy text; "openai" uses any OpenAI-compatible chat API
 # (OpenAI, Groq, Gemini's OpenAI endpoint, OpenRouter...).
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "local")
 LLM_CHAT_MODEL = os.getenv("LLM_CHAT_MODEL", "gpt-4o-mini")
+# For reasoning models (e.g. Gemini 3): "low" keeps replies fast. Leave empty for other models.
+LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "")
+# Reasoning tokens count against this budget, so it is larger than a short reply needs.
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
+# How long a customer's chat request may wait on provider rate limits before handing off.
+LLM_RETRY_SECONDS = float(os.getenv("LLM_RETRY_SECONDS", "8"))
 RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "4"))
 
 # Production hardening (DJANGO_DEBUG=false)

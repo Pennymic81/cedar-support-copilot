@@ -27,10 +27,20 @@ services:
         value: "false"
       - key: DEMO_ADMIN_PASSWORD
         sync: false # you type this in when you apply the Blueprint
-      - key: EMBEDDING_PROVIDER
-        value: local
+      # AI: Google Gemini for answers and embeddings. Without LLM_API_KEY the app runs
+      # fully offline (local mode), so a missing or removed key never breaks the site.
+      - key: LLM_API_KEY
+        sync: false # paste your Gemini API key in the Render dashboard (Environment tab)
       - key: LLM_PROVIDER
-        value: local
-      # To use a real model later, set LLM_PROVIDER=openai and EMBEDDING_PROVIDER=openai,
-      # add LLM_API_KEY (and LLM_API_BASE / LLM_CHAT_MODEL for Groq or Gemini),
-      # then re-run seed_demo --refresh from the Render shell.
+        value: openai # Gemini's OpenAI-compatible chat endpoint
+      - key: LLM_API_BASE
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: LLM_CHAT_MODEL
+        value: gemini-3.8-flash
+      - key: LLM_REASONING_EFFORT
+        value: low
+      - key: EMBEDDING_PROVIDER
+        value: gemini
+      - key: EMBEDDING_MODEL
+        value: gemini-embedding-001
+      # On deploy, build.sh re-embeds the documents, calibrates the threshold and re-runs the evals.

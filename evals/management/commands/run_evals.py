@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from core.models import Business
 from evals.models import EvalRun
-from evals.services.runner import run
+from evals.services.runner import current_config, run
 
 
 def pct(x):
@@ -26,7 +26,8 @@ class Command(BaseCommand):
         parser.add_argument("--if-none", action="store_true", help="Only run if this business has no runs yet")
         parser.add_argument(
             "--if-stale", action="store_true",
-            help="Only run if there are no runs, or the latest run used a different number of questions",
+            help="Only run if there are no runs, or the latest run used other questions or another config"
+            " (model, threshold, top_k)",
         )
 
     def handle(self, *args, **opts):
@@ -35,8 +36,13 @@ class Command(BaseCommand):
             raise CommandError(f"No business named {opts['business']!r}. Run seed_demo first.")
 
         latest = business.eval_runs.first()
-        if opts["if_stale"] and latest and latest.total == business.eval_questions.count():
-            self.stdout.write("Latest eval run matches the current question set; skipping.")
+        if (
+            opts["if_stale"]
+            and latest
+            and latest.total == business.eval_questions.count()
+            and latest.config == current_config(business)
+        ):
+            self.stdout.write("Latest eval run matches the current questions and config; skipping.")
             return
         if opts["if_none"] and business.eval_runs.exists():
             self.stdout.write("Eval runs already exist; skipping.")

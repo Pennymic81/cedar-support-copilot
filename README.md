@@ -28,7 +28,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 
 - **Backend:** Django 5 + Django REST Framework
 - **Database and vector search:** PostgreSQL 16 with pgvector (HNSW index, cosine distance)
-- **AI:** pluggable embeddings and answers (offline by default; any OpenAI-compatible API such as OpenAI, Groq or Gemini)
+- **AI:** Google Gemini (`gemini-3.8-flash` for answers, `gemini-embedding-001` at 1536 dimensions for retrieval), with an offline mode that needs no key; any OpenAI-compatible API also works
 - **Testing:** Django tests, eval set, Postman collection
 
 ## Project layout
@@ -106,7 +106,10 @@ Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Cha
 
 Embeddings are pluggable via `EMBEDDING_PROVIDER`:
 - `local` (default): offline hashing embedder, no API key, good for development and tests.
-- `openai`: any OpenAI-compatible embeddings API; set `LLM_API_KEY`, `EMBEDDING_MODEL` and, if needed, `LLM_API_BASE`. Run `reprocess` on existing documents after switching.
+- `gemini`: Gemini's native embeddings API with `outputDimensionality` 1536 and separate task types for documents (`RETRIEVAL_DOCUMENT`) and questions (`RETRIEVAL_QUERY`). Set `LLM_API_KEY` and `EMBEDDING_MODEL=gemini-embedding-001`.
+- `openai`: any OpenAI-compatible embeddings API; set `LLM_API_KEY`, `EMBEDDING_MODEL` and, if needed, `LLM_API_BASE`.
+
+Each document records which model embedded it, and search only compares vectors from the current model. After switching models, `python manage.py reembed` re-embeds the stored chunks (the deploy script does this automatically). Rate limits (HTTP 429) and temporary errors are retried with backoff; a customer's request waits at most `LLM_RETRY_SECONDS` (8 s) before handing off to a person. If `LLM_API_KEY` is missing, everything falls back to offline mode.
 
 ## Add the chat widget to any site
 
@@ -151,9 +154,9 @@ Agents approve the draft, edit it, or write their own. Each ticket records which
 
 Answers are pluggable via `LLM_PROVIDER`:
 - `local` (default): no model, replies with the best-matching policy section. Grounded and cited, but not conversational.
-- `openai`: any OpenAI-compatible chat API. Set `LLM_API_KEY`, `LLM_CHAT_MODEL` and `LLM_API_BASE`, for example `https://api.openai.com/v1`, `https://api.groq.com/openai/v1` or `https://generativelanguage.googleapis.com/v1beta/openai`.
+- `openai`: any OpenAI-compatible chat API. For Gemini: `LLM_API_BASE=https://generativelanguage.googleapis.com/v1beta/openai`, `LLM_CHAT_MODEL=gemini-3.8-flash`, `LLM_REASONING_EFFORT=low` (Gemini 3 always reasons; "low" keeps replies fast). Reasoning tokens count against `LLM_MAX_TOKENS` (2048), so it is larger than a short reply needs.
 
-The confidence threshold defaults to 0.2 for the offline embedder and 0.45 for real embeddings; set it per business in the admin. Day 5's evals are how to tune it.
+The confidence threshold is 0.21 for the offline embedder. For a real embedding model, `python manage.py calibrate_threshold` picks it from retrieval scores on the eval set (no chat calls) and saves it on the business; the deploy script runs it on every deploy.
 
 Try it after `seed_demo` and `runserver`:
 
@@ -192,7 +195,7 @@ Each question runs through the real chat pipeline inside a transaction that is r
 | tuned-threshold-0.21 | Threshold chosen by sweep: lowest with zero unsafe answers | 89.5% | 94.7% | 91.3% | **0** | 2 |
 | small-talk-and-followups | Greetings get a reply instead of a handoff (found by live testing); 2 greeting questions added (40 total) | 90.0% | 95.0% | 92.0% | **0** | 2 |
 
-The remaining misses are retrieval limits of the offline hashing embedder (for example "weekend" vs "weekends ... next business day"). The next run to record is the same set with real embeddings (`EMBEDDING_PROVIDER=openai`).
+The remaining misses are retrieval limits of the offline hashing embedder (for example "weekend" vs "weekends ... next business day"). With Gemini, the deploy re-runs the evals automatically (a run is redone whenever the model, threshold or questions change), and the result appears on the dashboard.
 
 Caveat: the threshold was tuned on this same 38-question set, so add new questions over time rather than tuning only to these.
 
@@ -202,9 +205,9 @@ The repo is a [Render Blueprint](https://render.com/docs/infrastructure-as-code)
 
 1. Sign in to [Render](https://dashboard.render.com) with GitHub.
 2. **New → Blueprint**, pick this repository.
-3. Enter a `DEMO_ADMIN_PASSWORD` when asked, then **Apply**.
+3. Enter a `DEMO_ADMIN_PASSWORD` and your Gemini `LLM_API_KEY` (free from [Google AI Studio](https://aistudio.google.com/apikey)) when asked, then **Apply**. Leave the key empty to run in offline mode.
 
-`build.sh` installs dependencies, collects static files, migrates, and loads the Cedar Pay demo (docs, eval set, a baseline eval run and demo traffic). Every step is safe to repeat on later deploys.
+`build.sh` installs dependencies, collects static files, migrates, and loads the Cedar Pay demo (docs, eval set and demo traffic). It then re-embeds documents if the embedding model changed, calibrates the confidence threshold, and runs the evals if anything they depend on changed. Every step is safe to repeat on later deploys.
 
 After it's live:
 - `https://<your-service>.onrender.com/`: demo site with the chat widget
@@ -223,7 +226,7 @@ Free-plan notes: the web service sleeps after inactivity (the first request take
 python manage.py test
 ```
 
-The tests use the same Postgres database server (Django creates a temporary test database), including a check that vector search returns the nearest chunk.
+The tests use the same Postgres database server (Django creates a temporary test database), including a check that vector search returns the nearest chunk. The Gemini tests mock the network, so no key is needed: request shapes, retries on 429, re-embedding after a model switch, threshold calibration, and the fallback to offline mode.
 
 ## Credits
 
