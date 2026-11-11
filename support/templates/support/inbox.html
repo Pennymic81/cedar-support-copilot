@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inbox · {{ business.name }}</title>
+<style>
+  :root { --ink: #16181D; --muted: #5B616E; --line: #E5E5E1; --bg: #F7F7F5; --teal: #0F766E; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: var(--ink); color: #fff; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header a { color: #D4D4CE; font-size: 14px; margin-left: 18px; }
+  header a.on { color: #fff; font-weight: 600; text-decoration: none; }
+  main { max-width: 1320px; margin: 0 auto; padding: 24px 28px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .list { flex: 1 1 300px; max-width: 380px; display: flex; flex-direction: column; gap: 10px; }
+  .list-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .list-head h2 { margin: 0; font-size: 22px; }
+  .list-head a { font-size: 14px; color: var(--teal); }
+  .item { display: block; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; color: inherit; text-decoration: none; }
+  .item.on { border: 2px solid var(--teal); padding: 13px 15px; }
+  .item b { display: block; font-size: 15px; margin-bottom: 6px; }
+  .item span { font-size: 13px; color: var(--muted); }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #FEF3C7; color: #7A4B00; }
+  .badge.grey { background: #EEF0F3; color: #3F4450; }
+  .badge.teal { background: #E6F4F1; color: #115E59; }
+  .detail { flex: 999 1 560px; min-width: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .detail h2 { margin: 0; font-size: 21px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+  .summary { background: var(--bg); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.55; }
+  .chat { display: flex; flex-direction: column; gap: 8px; }
+  .bubble { max-width: 78%; padding: 9px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45; }
+  .customer { background: var(--ink); color: #fff; align-self: flex-start; }
+  .ai { background: #F3F2EE; align-self: flex-end; }
+  .agent { background: #FEF3C7; align-self: flex-end; }
+  .who { display: block; font-size: 11px; opacity: .7; margin-bottom: 2px; }
+  label { font-weight: 600; font-size: 15px; }
+  textarea { width: 100%; min-height: 120px; border: 1px solid #D4D4CE; border-radius: 10px; padding: 12px 14px; font: inherit; font-size: 15px; line-height: 1.55; resize: vertical; }
+  .sources { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+  .note { font-size: 13px; color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  button { font: inherit; font-size: 15px; font-weight: 500; border-radius: 10px; padding: 11px 16px; cursor: pointer; border: 1px solid #C9C9C3; background: #fff; color: var(--ink); }
+  button.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .flash { padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+  .flash.success { background: #E6F4F1; color: #115E59; }
+  .flash.error { background: #FCEBEB; color: #791F1F; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cedar Support Copilot · {{ business.name }}</h1>
+  <nav><a class="on" href="{% url 'inbox' %}">Inbox</a><a href="{% url 'dashboard' %}">Dashboard</a><a href="/">Demo site</a><a href="/admin/logout/">Log out</a></nav>
+</header>
+<main>
+  <section class="list" aria-label="Tickets">
+    <div class="list-head">
+      <h2>{% if show_closed %}Closed{% else %}Waiting for a person{% endif %}</h2>
+      {% if show_closed %}<a href="{% url 'inbox' %}">Open tickets</a>{% else %}<a href="{% url 'inbox' %}?show=closed">Closed</a>{% endif %}
+    </div>
+    {% for t in tickets %}
+      <a class="item{% if ticket and t.id == ticket.id %} on{% endif %}" href="{% url 'inbox-ticket' t.id %}{% if show_closed %}?show=closed{% endif %}">
+        <b>{{ t.summary|truncatechars:70|default:"Handed-off chat" }}</b>
+        <span class="badge{% if t.reason == 'customer_requested' %} grey{% endif %}">{{ t.get_reason_display }}</span>
+        <span> · {{ t.created_at|timesince }} ago</span>
+      </a>
+    {% empty %}
+      <p class="empty">Nothing waiting. The AI is handling everything right now.</p>
+    {% endfor %}
+  </section>
+
+  {% if ticket %}
+  <section class="detail" aria-label="Selected ticket">
+    {% for m in messages %}<div class="flash {{ m.tags }}">{{ m }}</div>{% endfor %}
+    <div>
+      <h2>Ticket #{{ ticket.id }}</h2>
+      <div class="meta">
+        <span class="badge{% if ticket.reason == 'customer_requested' %} grey{% endif %}">{{ ticket.get_reason_display }}</span>
+        <span>{{ ticket.get_status_display }}</span>
+        {% if ticket.assigned_to %}<span>· assigned to {{ ticket.assigned_to.username }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="summary"><b>Summary:</b> {{ ticket.summary }}</div>
+
+    <div class="chat" aria-label="Conversation">
+      {% for m in chat %}
+        <div class="bubble {{ m.sender }}"><span class="who">{% if m.sender == 'customer' %}Customer{% elif m.sender == 'ai' %}Cedar Assistant{% else %}{{ m.author.username|default:"Agent" }}{% endif %}</span>{{ m.content }}</div>
+      {% endfor %}
+    </div>
+
+    {% if ticket.status != 'closed' %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="reply">{% if policy_draft %}Suggested reply{% else %}Your reply{% endif %}</label>
+      {% if policy_draft %}
+        <textarea id="reply" name="reply">{{ ticket.suggested_reply }}</textarea>
+        <div class="sources">Based on:
+          {% for c in ticket.draft_sources.all %}<span class="badge teal">{{ c.document.title }}</span>{% endfor %}
+          <span>· send as is, or edit it first</span>
+        </div>
+      {% else %}
+        <textarea id="reply" name="reply" placeholder="Write your reply to the customer…"></textarea>
+        <p class="note">No matching policy was found, so there's no draft. The AI didn't guess.</p>
+      {% endif %}
+      <div class="actions" style="margin-top: 14px">
+        <button class="primary" name="action" value="send_close">Send and close</button>
+        <button name="action" value="send">Send</button>
+        <button name="action" value="redraft">Redraft</button>
+        <button name="action" value="close">Close without replying</button>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+</main>
+</body>
+</html>

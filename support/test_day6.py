@@ -93,3 +93,49 @@ class DashboardTests(TestCase):
         call_command("simulate_traffic", "--conversations", "5", stdout=io.StringIO())
         call_command("simulate_traffic", "--clear", stdout=io.StringIO())
         self.assertEqual(Conversation.objects.count(), 0)
+
+
+class InboxPageTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo", stdout=io.StringIO())
+        cls.business = Business.objects.get(name="Cedar Pay")
+        cls.agent = get_user_model().objects.create_user("agent1", password="test-pass-123")
+        StaffProfile.objects.create(user=cls.agent, business=cls.business)
+
+    def setUp(self):
+        APIClient().post("/api/chat/", {"widget_key": self.business.widget_key,
+                         "message": "I was charged $250 but the transfer failed"}, format="json")
+        self.ticket = Ticket.objects.get()
+
+    def test_requires_staff(self):
+        self.assertEqual(self.client.get("/inbox/").status_code, 302)
+
+    def test_lists_and_shows_ticket_with_draft(self):
+        self.client.force_login(self.agent)
+        resp = self.client.get("/inbox/", follow=True)
+        self.assertContains(resp, "Suggested reply")
+        self.assertContains(resp, "Failed transfers and reversals")
+        self.assertContains(resp, "I was charged $250")
+
+    def test_send_unchanged_draft_and_close(self):
+        self.client.force_login(self.agent)
+        self.client.post(f"/inbox/{self.ticket.id}/", {"action": "send_close", "reply": self.ticket.suggested_reply})
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.status, "closed")
+        self.assertEqual(self.ticket.draft_outcome, "approved")
+
+    def test_edited_draft_and_empty_reply(self):
+        self.client.force_login(self.agent)
+        resp = self.client.post(f"/inbox/{self.ticket.id}/", {"action": "send", "reply": ""}, follow=True)
+        self.assertContains(resp, "Write a reply")
+        self.client.post(f"/inbox/{self.ticket.id}/", {"action": "send", "reply": "Your $250 is on its way back."})
+        self.ticket.refresh_from_db()
+        self.assertEqual(self.ticket.draft_outcome, "edited")
+
+    def test_other_business_cannot_open_ticket(self):
+        other = Business.objects.create(name="Other")
+        outsider = get_user_model().objects.create_user("outsider", password="test-pass-123")
+        StaffProfile.objects.create(user=outsider, business=other)
+        self.client.force_login(outsider)
+        self.assertEqual(self.client.get(f"/inbox/{self.ticket.id}/").status_code, 404)

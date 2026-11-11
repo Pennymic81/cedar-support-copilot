@@ -4,7 +4,7 @@ An AI support layer for fintech companies. It answers customers **only from the 
 
 It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 
-**Live demo: https://cedar-support-copilot.onrender.com** (free plan: the first visit after a quiet spell takes about a minute to wake up).
+**Live demo: https://cedar-support-copilot.onrender.com** · **[Watch the 80-second demo video](docs/demo.mp4)** (free plan: the first visit after a quiet spell takes about a minute to wake up).
 
 | Chat widget | Team dashboard |
 |---|---|
@@ -124,6 +124,7 @@ The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break 
 
 Pages:
 - `/`: Cedar Pay demo page with the widget.
+- `/inbox/`: agent Inbox: handed-off chats with the summary, conversation and a suggested reply from the policy; send it as is, edit it, or write your own.
 - `/dashboard/`: staff dashboard (log in with a staff user, e.g. the one `seed_demo --password` creates).
 - `python manage.py simulate_traffic`: fills the dashboard with demo conversations through the real pipeline (`--clear` removes them).
 

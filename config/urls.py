@@ -8,6 +8,7 @@ from core.views import dashboard, demo, health
 from evals.views import EvalRunViewSet
 from knowledge.views import DocumentViewSet, search_view
 from support.agent_views import TicketViewSet, analytics
+from support.inbox_views import inbox
 from support.views import chat, conversation_history
 
 admin.site.site_header = "Cedar Support Copilot"
@@ -21,6 +22,8 @@ router.register("evals/runs", EvalRunViewSet, basename="eval-run")
 urlpatterns = [
     path("", demo, name="demo"),
     path("dashboard/", dashboard, name="dashboard"),
+    path("inbox/", inbox, name="inbox"),
+    path("inbox/<int:ticket_id>/", inbox, name="inbox-ticket"),
     path("admin/", admin.site.urls),
     path("api/analytics/", analytics, name="analytics"),
     path("api/health/", health, name="health"),

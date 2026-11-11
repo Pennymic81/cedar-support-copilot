@@ -1,17 +1,16 @@
 """The agent inbox: tickets the copilot handed to a person."""
 from django.contrib.auth import get_user_model
-from django.db import transaction
-from django.utils import timezone
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from core.permissions import IsBusinessStaff, business_for
 
-from .models import Conversation, Message, Ticket
+from .models import Ticket
 from .serializers import AgentReplySerializer, TicketDetailSerializer, TicketListSerializer
 from .services.analytics import summary
-from .services.drafts import NO_POLICY_DRAFT, draft_for_ticket
+from .services.agent import AgentActionError, close_ticket, send_reply
+from .services.drafts import draft_for_ticket
 
 
 class TicketViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -59,39 +58,13 @@ class TicketViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.G
         """Send a reply to the customer: {"use_draft": true} sends the suggestion as is,
         {"content": "..."} sends your own or edited text. Add "close": true to resolve the chat."""
         ticket = self.get_object()
-        if ticket.status == Ticket.Status.CLOSED:
-            return Response({"detail": "This ticket is closed."}, status=status.HTTP_400_BAD_REQUEST)
         body = AgentReplySerializer(data=request.data)
         body.is_valid(raise_exception=True)
         data = body.validated_data
-
-        if data["use_draft"] and not data.get("content"):
-            if not ticket.draft_grounded or ticket.suggested_reply == NO_POLICY_DRAFT:
-                return Response(
-                    {"detail": "There's no policy-based draft for this ticket; write the reply yourself."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            content, outcome = ticket.suggested_reply, Ticket.DraftOutcome.APPROVED
-        else:
-            content = data["content"]
-            outcome = (
-                Ticket.DraftOutcome.EDITED
-                if ticket.draft_grounded and data["use_draft"]
-                else Ticket.DraftOutcome.WRITTEN
-            )
-
-        with transaction.atomic():
-            Message.objects.create(
-                conversation=ticket.conversation, sender=Message.Sender.AGENT, content=content, author=request.user
-            )
-            if ticket.assigned_to is None:
-                ticket.assigned_to = request.user
-            ticket.status = Ticket.Status.IN_PROGRESS
-            if not ticket.draft_outcome:
-                ticket.draft_outcome = outcome
-            ticket.save(update_fields=["assigned_to", "status", "draft_outcome"])
-            if data["close"]:
-                self._close(ticket)
+        try:
+            send_reply(ticket, request.user, data.get("content", ""), data["use_draft"], data["close"])
+        except AgentActionError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return self._detail(ticket)
 
     @action(detail=True, methods=["post"])
@@ -104,18 +77,8 @@ class TicketViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.G
     def close(self, request, pk=None):
         """Resolve: the chat goes back to the AI if the customer writes again."""
         ticket = self.get_object()
-        with transaction.atomic():
-            self._close(ticket)
+        close_ticket(ticket)
         return self._detail(ticket)
-
-    @staticmethod
-    def _close(ticket):
-        ticket.status = Ticket.Status.CLOSED
-        ticket.closed_at = timezone.now()
-        ticket.save(update_fields=["status", "closed_at"])
-        convo = ticket.conversation
-        convo.status = Conversation.Status.RESOLVED
-        convo.save(update_fields=["status"])
 
 
 @api_view(["GET"])
