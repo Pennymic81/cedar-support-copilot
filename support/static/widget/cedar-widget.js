@@ -40,6 +40,9 @@
     ".head{background:" + ACCENT + ";color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}" +
     ".head h2{margin:0;font-size:15px;font-weight:600}.head p{margin:2px 0 0;font-size:12px;opacity:.85}" +
     ".close{background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer;width:32px;height:32px}" +
+    ".actions{display:flex;align-items:center;gap:4px}" +
+    ".new{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:12px;border-radius:999px;padding:6px 10px;cursor:pointer}" +
+    ".new:hover{background:rgba(255,255,255,.28)}" +
     ".log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FBFBFA}" +
     ".msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}" +
     ".customer{align-self:flex-end;background:#16181D;color:#fff;border-bottom-right-radius:4px}" +
@@ -61,7 +64,8 @@
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></button>' +
     '<section class="panel" role="dialog" aria-label="' + esc(TITLE) + ' chat">' +
     '<div class="head"><div><h2>' + esc(TITLE) + "</h2><p>Answers from our help docs · a person can step in</p></div>" +
-    '<button class="close" aria-label="Close chat">×</button></div>' +
+    '<div class="actions"><button class="new" type="button">New chat</button>' +
+    '<button class="close" aria-label="Close chat">×</button></div></div>' +
     '<div class="log" aria-live="polite"></div>' +
     '<form><label class="sr" for="cw-input">Your question</label>' +
     '<input id="cw-input" autocomplete="off" maxlength="2000" placeholder="Ask a question…">' +
@@ -159,6 +163,7 @@
   function restore() {
     if (!state.token) {
       add("ai", "Hi! Ask me about fees, limits or transfers. If I'm not sure, I'll pass you to our team.");
+      state.seen = 0;
       return;
     }
     fetchHistory(true);
@@ -203,6 +208,12 @@
   }
   launcher.addEventListener("click", function () { toggle(!panel.classList.contains("open")); });
   root.querySelector(".close").addEventListener("click", function () { toggle(false); });
+  root.querySelector(".new").addEventListener("click", function () {
+    state.token = ""; save(""); state.seen = 0; stopPolling();
+    log.innerHTML = "";
+    restore();
+    input.focus();
+  });
   panel.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
   form.addEventListener("submit", function (e) {
     e.preventDefault();

@@ -24,12 +24,20 @@ class Command(BaseCommand):
         parser.add_argument("--sweep", help="Comma-separated thresholds to compare (results not saved)")
         parser.add_argument("--quiet", action="store_true", help="Only print the summary")
         parser.add_argument("--if-none", action="store_true", help="Only run if this business has no runs yet")
+        parser.add_argument(
+            "--if-stale", action="store_true",
+            help="Only run if there are no runs, or the latest run used a different number of questions",
+        )
 
     def handle(self, *args, **opts):
         business = Business.objects.filter(name=opts["business"]).first()
         if business is None:
             raise CommandError(f"No business named {opts['business']!r}. Run seed_demo first.")
 
+        latest = business.eval_runs.first()
+        if opts["if_stale"] and latest and latest.total == business.eval_questions.count():
+            self.stdout.write("Latest eval run matches the current question set; skipping.")
+            return
         if opts["if_none"] and business.eval_runs.exists():
             self.stdout.write("Eval runs already exist; skipping.")
             return

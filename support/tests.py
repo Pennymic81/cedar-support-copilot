@@ -64,12 +64,51 @@ class ChatApiTests(TestCase):
         self.assertIn("Of course", resp.json()["reply"]["content"])
         self.assertEqual(Ticket.objects.get().reason, Ticket.Reason.CUSTOMER_REQUESTED)
 
-    def test_ai_stays_quiet_after_handoff(self):
-        token = self.send("Do you offer car loans?").json()["conversation_token"]
+    def test_ai_stays_quiet_after_a_person_is_requested(self):
+        token = self.send("Can I talk to a person please?").json()["conversation_token"]
         resp = self.send("How much does a transfer cost?", token=token)
         self.assertTrue(resp.json()["reply"]["handed_off"])
         self.assertIn("member of our team", resp.json()["reply"]["content"])
         self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_greetings_and_thanks_get_a_reply_without_a_ticket(self):
+        for text in ["hi", "Hello!", "good morning", "thanks!", "ok"]:
+            reply = self.send(text).json()["reply"]
+            self.assertFalse(reply["handed_off"], text)
+            self.assertIn("help", reply["content"], text)
+        self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_hi_then_a_real_question_is_answered(self):
+        token = self.send("hi").json()["conversation_token"]
+        reply = self.send("How long does a transfer to Spain take?", token=token).json()["reply"]
+        self.assertFalse(reply["handed_off"])
+        self.assertEqual(reply["citations"][0]["section"], "Transfer times")
+
+    def test_ai_keeps_helping_after_a_not_sure_handoff(self):
+        token = self.send("Do you offer car loans?").json()["conversation_token"]
+        answered = self.send("How long does a transfer to Spain take?", token=token).json()
+        self.assertFalse(answered["reply"]["handed_off"])
+        self.assertEqual(answered["status"], "escalated")  # the team still has the loan question
+        unsure = self.send("Can I get a mortgage?", token=token).json()["reply"]
+        self.assertIn("either", unsure["content"])
+        self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_money_problem_after_not_sure_handoff_upgrades_the_ticket(self):
+        token = self.send("Do you offer car loans?").json()["conversation_token"]
+        self.send("I was charged twice for a transfer", token=token)
+        ticket = Ticket.objects.get()
+        self.assertEqual(ticket.reason, Ticket.Reason.SENSITIVE)
+        quiet = self.send("How long does a transfer to Spain take?", token=token).json()["reply"]
+        self.assertIn("member of our team", quiet["content"])
+
+    def test_ai_goes_quiet_once_an_agent_replies(self):
+        from support.models import Message as Msg
+
+        token = self.send("Do you offer car loans?").json()["conversation_token"]
+        convo = Conversation.objects.get(token=token)
+        Msg.objects.create(conversation=convo, sender="agent", content="Not yet, sorry!")
+        reply = self.send("How long does a transfer to Spain take?", token=token).json()["reply"]
+        self.assertIn("member of our team", reply["content"])
 
     def test_conversation_continues_and_history_is_readable_with_token(self):
         token = self.send("How long does a transfer to Spain take?").json()["conversation_token"]

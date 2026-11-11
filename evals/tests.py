@@ -57,8 +57,8 @@ class RunnerTests(TestCase):
 
     def test_full_set_runs_without_leaving_data_behind(self):
         result = run(self.business, "test")
-        self.assertEqual(result.total, 38)
-        self.assertEqual(EvalResult.objects.filter(run=result).count(), 38)
+        self.assertEqual(result.total, 40)
+        self.assertEqual(EvalResult.objects.filter(run=result).count(), 40)
         self.assertEqual(Conversation.objects.count(), 0)
         self.assertEqual(Message.objects.count(), 0)
         self.assertEqual(Ticket.objects.count(), 0)
@@ -70,7 +70,7 @@ class RunnerTests(TestCase):
 
     def test_threshold_override_is_not_saved_and_changes_results(self):
         strict = run(self.business, "strict", threshold=0.9, save=False)
-        self.assertEqual(strict.handoff_rate, 1.0)
+        self.assertEqual(strict.handoff_rate, 38 / 40)  # everything except the 2 greetings
         self.business.refresh_from_db()
         self.assertIsNone(self.business.confidence_threshold)
         self.assertFalse(EvalRun.objects.filter(label="strict").exists())
@@ -92,5 +92,5 @@ class RunnerTests(TestCase):
         runs = client.get("/api/evals/runs/").json()
         self.assertEqual(runs[0]["label"], "api-run")
         detail = client.get(f"/api/evals/runs/{runs[0]['id']}/").json()
-        self.assertEqual(len(detail["results"]), 38)
+        self.assertEqual(len(detail["results"]), 40)
         self.assertEqual(APIClient().get("/api/evals/runs/").status_code, 403)

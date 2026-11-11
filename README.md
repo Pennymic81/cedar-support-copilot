@@ -117,7 +117,7 @@ Embeddings are pluggable via `EMBEDDING_PROVIDER`:
         data-accent="#0F766E" defer></script>
 ```
 
-The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break it, and it can't break the host page). It shows source chips under answers, tells the customer when a person has taken over, polls for agent replies, and keeps the conversation across page loads. The chat endpoints allow cross-origin calls and ignore cookies, so a logged-in staff session can never be used through the widget.
+The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break it, and it can't break the host page). It shows source chips under answers, tells the customer when a person has taken over, polls for agent replies, keeps the conversation across page loads, and has a **New chat** button to start fresh. The chat endpoints allow cross-origin calls and ignore cookies, so a logged-in staff session can never be used through the widget.
 
 Pages:
 - `/`: Cedar Pay demo page with the widget.
@@ -127,13 +127,14 @@ Pages:
 ## How a chat turn works
 
 1. The customer's message is saved.
-2. If the chat is already with a person, the AI stays quiet.
-3. **Money-safety rule:** failed charges, missing money, fraud, refunds and blocked accounts or cards always go to a person, however confident retrieval is. A policy can say "reversals arrive within 24 hours", but only a person can check what happened to *this* customer's money.
-4. If the customer asks for a person ("can I talk to someone?"), it hands off.
-5. Otherwise it retrieves the closest policy sections. The top score is the **confidence**.
-6. Below the business's threshold → **hand off**: the chat is escalated and a ticket is created.
-7. Otherwise the answer step writes a reply **only from those sections**, citing them as `[1]`, `[2]`. If the model says the sources don't answer it, or the model is down, it hands off instead of guessing.
-8. The reply is saved with its citations (document and section).
+2. If the chat is already with a person because of money or a request for a person, or an agent has replied, the AI stays quiet. After a "not sure" handoff it keeps answering what it can while the team has the earlier question.
+3. Greetings and thanks ("hi", "thanks!") get a friendly reply, never a ticket.
+4. **Money-safety rule:** failed charges, missing money, fraud, refunds and blocked accounts or cards always go to a person, however confident retrieval is. A policy can say "reversals arrive within 24 hours", but only a person can check what happened to *this* customer's money.
+5. If the customer asks for a person ("can I talk to someone?"), it hands off.
+6. Otherwise it retrieves the closest policy sections. The top score is the **confidence**.
+7. Below the business's threshold → **hand off**: the chat is escalated and a ticket is created.
+8. Otherwise the answer step writes a reply **only from those sections**, citing them as `[1]`, `[2]`. If the model says the sources don't answer it, or the model is down, it hands off instead of guessing.
+9. The reply is saved with its citations (document and section).
 
 ## When a person takes over
 
@@ -159,7 +160,7 @@ curl -s localhost:8000/api/chat/ -H 'Content-Type: application/json' \
 
 ## Evals: measured, not guessed
 
-`evals/fixtures/cedar_pay_evals.json` holds 38 test questions: 25 the copilot should answer (with the document, section and key facts expected), 8 money or account problems, 1 request for a person and 4 off-topic questions it should hand off.
+`evals/fixtures/cedar_pay_evals.json` holds 40 test questions: 25 the copilot should answer, 2 greetings (with the document, section and key facts expected), 8 money or account problems, 1 request for a person and 4 off-topic questions it should hand off.
 
 ```bash
 python manage.py load_evals
@@ -185,6 +186,7 @@ Each question runs through the real chat pipeline inside a transaction that is r
 | baseline | — | 84.2% | 89.5% | 91.7% | **2** | 1 |
 | money-rule-v2 | Fraud rule also catches "it wasn't me" and "a payment I don't recognise" | 89.5% | 94.7% | 91.7% | **1** | 1 |
 | tuned-threshold-0.21 | Threshold chosen by sweep: lowest with zero unsafe answers | 89.5% | 94.7% | 91.3% | **0** | 2 |
+| small-talk-and-followups | Greetings get a reply instead of a handoff (found by live testing); 2 greeting questions added (40 total) | 90.0% | 95.0% | 92.0% | **0** | 2 |
 
 The remaining misses are retrieval limits of the offline hashing embedder (for example "weekend" vs "weekends ... next business day"). The next run to record is the same set with real embeddings (`EMBEDDING_PROVIDER=openai`).
 

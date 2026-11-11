@@ -27,6 +27,13 @@ SENSITIVE_REPLY = (
 )
 PERSON_REPLY = "Of course. I've passed you to our team, and a person will reply right here."
 WAITING_REPLY = "Thanks, a member of our team has your conversation and will reply here."
+STILL_WAITING_REPLY = (
+    "I'm not sure about that one either. Our team already has your conversation and will reply here."
+)
+GREETING_REPLY = "Hi! I can help with fees, limits, transfers and your Cedar Pay account. What would you like to know?"
+THANKS_REPLY = "You're welcome! Is there anything else I can help with?"
+GREETING = re.compile(r"^\s*(hi|hello|hey|hiya|good (morning|afternoon|evening))( there)?[\s!.,?]*$", re.I)
+THANKS = re.compile(r"^\s*(thanks|thank you|thx|ok|okay|great|cool|got it|perfect)( (so much|a lot))?[\s!.,]*$", re.I)
 HUMAN_REQUEST = re.compile(r"\b(human|person|agent|someone|representative|real people)\b", re.I)
 HUMAN_VERBS = re.compile(r"\b(talk|speak|chat|connect|get|want|need)\b", re.I)
 
@@ -37,6 +44,25 @@ class ChatResult:
     reply: Message
     handed_off: bool
     citations: list = field(default_factory=list)
+
+
+def small_talk_reply(text: str) -> str | None:
+    if GREETING.match(text):
+        return GREETING_REPLY
+    if THANKS.match(text):
+        return THANKS_REPLY
+    return None
+
+
+def ai_can_still_help(convo: Conversation) -> bool:
+    """After a low-confidence handoff, and until an agent replies, the AI keeps answering
+    what it can. For money problems or when a person was asked for, it stays quiet."""
+    ticket = getattr(convo, "ticket", None)
+    return bool(
+        ticket
+        and ticket.reason == Ticket.Reason.LOW_CONFIDENCE
+        and not convo.messages.filter(sender=Message.Sender.AGENT).exists()
+    )
 
 
 def wants_a_person(text: str) -> bool:
@@ -67,8 +93,9 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
     history = list(convo.messages.all())
     Message.objects.create(conversation=convo, sender=Message.Sender.CUSTOMER, content=text)
 
-    # Already with a person: the AI stays quiet.
-    if convo.status == Conversation.Status.ESCALATED:
+    # Already with a person: the AI stays quiet, unless the handoff was only "not sure".
+    waiting_for_team = convo.status == Conversation.Status.ESCALATED
+    if waiting_for_team and not ai_can_still_help(convo):
         reply = Message.objects.create(conversation=convo, sender=Message.Sender.AI, content=WAITING_REPLY)
         return ChatResult(convo, reply, handed_off=True)
 
@@ -76,6 +103,12 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
     if convo.status == Conversation.Status.RESOLVED:
         convo.status = Conversation.Status.OPEN
         convo.save(update_fields=["status"])
+
+    # Greetings and thanks get a friendly reply, never a ticket.
+    small_talk = small_talk_reply(text)
+    if small_talk:
+        reply = Message.objects.create(conversation=convo, sender=Message.Sender.AI, content=small_talk)
+        return ChatResult(convo, reply, handed_off=waiting_for_team)
 
     # Money-safety rule: these always go to a person, however confident retrieval is.
     category = sensitive.detect(text)
@@ -93,6 +126,11 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
     confidence = round(chunks[0].score, 3) if chunks else 0.0
 
     if confidence < business.effective_threshold:
+        if waiting_for_team:  # the team already has this chat; don't open it again
+            reply = Message.objects.create(
+                conversation=convo, sender=Message.Sender.AI, content=STILL_WAITING_REPLY, confidence=confidence
+            )
+            return ChatResult(convo, reply, handed_off=True)
         with transaction.atomic():
             reply = _hand_off(convo, Ticket.Reason.LOW_CONFIDENCE, confidence)
         return ChatResult(convo, reply, handed_off=True)
@@ -104,6 +142,11 @@ def handle_customer_message(convo: Conversation, text: str) -> ChatResult:
         draft = None
 
     if draft is None or not draft.answered:
+        if waiting_for_team:
+            reply = Message.objects.create(
+                conversation=convo, sender=Message.Sender.AI, content=STILL_WAITING_REPLY, confidence=confidence
+            )
+            return ChatResult(convo, reply, handed_off=True)
         with transaction.atomic():
             reply = _hand_off(convo, Ticket.Reason.LOW_CONFIDENCE, confidence)
         return ChatResult(convo, reply, handed_off=True)

@@ -14,6 +14,6 @@ if [ -n "$DEMO_ADMIN_PASSWORD" ]; then
 else
   python manage.py seed_demo
 fi
-python manage.py load_evals --if-empty
-python manage.py run_evals --label deploy-baseline --quiet --if-none
+python manage.py load_evals --if-changed
+python manage.py run_evals --label "deploy-${RENDER_GIT_COMMIT:0:7}" --quiet --if-stale
 python manage.py simulate_traffic --if-empty

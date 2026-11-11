@@ -36,6 +36,9 @@
   {"question": "I was charged twice for the same transfer", "expected_outcome": "handoff", "expected_reason": "sensitive"},
   {"question": "There's a payment on my statement I don't recognise", "expected_outcome": "handoff", "expected_reason": "sensitive"},
 
+  {"question": "hi", "expected_outcome": "answer", "expected_keywords": ["help"], "note": "small talk: friendly reply, no ticket"},
+  {"question": "Thanks!", "expected_outcome": "answer", "expected_keywords": ["help"], "note": "small talk: friendly reply, no ticket"},
+
   {"question": "Can I speak to a human?", "expected_outcome": "handoff", "expected_reason": "customer_requested"},
 
   {"question": "Do you offer car loans?", "expected_outcome": "handoff", "expected_reason": "low_confidence"},
