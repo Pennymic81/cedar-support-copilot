@@ -4,6 +4,8 @@ An AI support layer for fintech companies. It answers customers **only from the 
 
 It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 
+**Live demo: https://cedar-support-copilot.onrender.com** (free plan: the first visit after a quiet spell takes about a minute to wake up).
+
 | Chat widget | Team dashboard |
 |---|---|
 | ![Chat widget answering with a source and handing off a money problem](docs/screenshots/widget.png) | ![Dashboard with AI resolution rate, handoff reasons, top topics and eval runs](docs/screenshots/dashboard.png) |
@@ -20,7 +22,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 | 4 | Human handoff: money-safety rule, agent inbox, drafted replies | ✅ Done |
 | 5 | Evals: 38-question test set, scoring, threshold tuning, run history | ✅ Done |
 | 6 | Embeddable chat widget, demo page, analytics API and dashboard | ✅ Done |
-| 7 | Deploy to Render (one-click Blueprint), demo video | ✅ Ready to deploy |
+| 7 | Deploy to Render (one-click Blueprint), demo script | ✅ [Live](https://cedar-support-copilot.onrender.com) |
 
 ## Tech stack
 
