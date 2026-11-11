@@ -1,0 +1,45 @@
+[
+  {"question": "How much can I send per day on a new account?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 1 accounts", "expected_keywords": ["$500"]},
+  {"question": "What do I need to open an account?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 1 accounts", "expected_keywords": ["phone"]},
+  {"question": "What's the maximum balance I can hold on Tier 1?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 1 accounts", "expected_keywords": ["$2,000"]},
+  {"question": "How do I upgrade to Tier 2?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 2 accounts", "expected_keywords": ["ID"]},
+  {"question": "How long does identity verification take?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 2 accounts", "expected_keywords": ["10 minutes"]},
+  {"question": "What is the daily sending limit on Tier 2?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Tier 2 accounts", "expected_keywords": ["$2,000"]},
+  {"question": "Can my business get higher limits?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "Raising your limit further", "expected_keywords": ["review"]},
+  {"question": "When do daily limits reset?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "When a limit is reached", "expected_keywords": ["midnight"]},
+  {"question": "What happens when I hit my daily limit?", "expected_outcome": "answer", "expected_document_title": "Account tiers and limits", "expected_section": "When a limit is reached", "expected_keywords": ["still send"]},
+
+  {"question": "Why would a transfer fail?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "Why a transfer can fail", "expected_keywords": ["rejects"]},
+  {"question": "What happens to my money if a transfer fails?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "What happens to your money", "expected_keywords": ["24 hours"]},
+  {"question": "Do I get the fee back if a transfer fails?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "What happens to your money", "expected_keywords": ["fee"]},
+  {"question": "Can I cancel a transfer?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "Cancelling a transfer", "expected_keywords": ["Processing"]},
+  {"question": "Can I still cancel a transfer that says Sent?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "Cancelling a transfer", "expected_keywords": ["can't"]},
+  {"question": "Will support ever ask for my password?", "expected_outcome": "answer", "expected_document_title": "Failed transfers and reversals", "expected_section": "If the money hasn't come back", "expected_keywords": ["never"]},
+
+  {"question": "Is there a monthly fee?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Fees", "expected_keywords": ["no monthly fee"]},
+  {"question": "How much does an international transfer cost?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Fees", "expected_keywords": ["$1.99"]},
+  {"question": "Is paying bills free?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Fees", "expected_keywords": ["free"]},
+  {"question": "Will I see the exchange rate before I send money?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Fees", "expected_keywords": ["exchange rate"]},
+  {"question": "How long does a transfer to Spain take?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Transfer times", "expected_keywords": ["minutes"]},
+  {"question": "How long do transfers to the UK take?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Transfer times", "expected_keywords": ["minutes"]},
+  {"question": "How long does a transfer to the United States take?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Transfer times", "expected_keywords": ["United States"]},
+  {"question": "What if I send money on a weekend?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Transfer times", "expected_keywords": ["next business day"]},
+  {"question": "Which currencies can I hold?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Holding more than one currency", "expected_keywords": ["euros"]},
+  {"question": "Can I keep British pounds in my wallet?", "expected_outcome": "answer", "expected_document_title": "Fees and transfer times", "expected_section": "Holding more than one currency", "expected_keywords": ["pounds"]},
+
+  {"question": "I was charged $250 but the transfer failed. Where is my money?", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "My transfer never arrived and it's been a week", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "Someone made a payment from my account and it wasn't me", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "I want a refund for a transfer", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "My card is blocked", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "I think I've been scammed", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "I was charged twice for the same transfer", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+  {"question": "There's a payment on my statement I don't recognise", "expected_outcome": "handoff", "expected_reason": "sensitive"},
+
+  {"question": "Can I speak to a human?", "expected_outcome": "handoff", "expected_reason": "customer_requested"},
+
+  {"question": "Do you offer car loans?", "expected_outcome": "handoff", "expected_reason": "low_confidence"},
+  {"question": "Can I get a mortgage?", "expected_outcome": "handoff", "expected_reason": "low_confidence"},
+  {"question": "What's the weather in London today?", "expected_outcome": "handoff", "expected_reason": "low_confidence"},
+  {"question": "Do you have a crypto wallet?", "expected_outcome": "handoff", "expected_reason": "low_confidence"}
+]

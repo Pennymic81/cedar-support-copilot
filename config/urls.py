@@ -5,6 +5,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from core.views import health
+from evals.views import EvalRunViewSet
 from knowledge.views import DocumentViewSet, search_view
 from support.agent_views import TicketViewSet
 from support.views import chat, conversation_history
@@ -15,6 +16,7 @@ admin.site.site_title = "Cedar Copilot admin"
 router = DefaultRouter()
 router.register("documents", DocumentViewSet, basename="document")
 router.register("tickets", TicketViewSet, basename="ticket")
+router.register("evals/runs", EvalRunViewSet, basename="eval-run")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

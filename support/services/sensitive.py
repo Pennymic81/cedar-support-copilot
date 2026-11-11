@@ -23,7 +23,9 @@ _RULES: list[tuple[str, list[str]]] = [
         "fraud",
         [
             r"\b(fraud|fraudulent|scam|scammed|stolen|hacked|phishing)\b",
-            r"\b(unauthori[sz]ed|didn'?t (make|authori[sz]e)|not me|someone (used|accessed|logged))\b",
+            r"\b(unauthori[sz]ed|didn'?t (make|authori[sz]e)|not me|wasn'?t me|someone (used|accessed|logged|made))\b",
+            r"\b(don'?t|do not|didn'?t) recogni[sz]e\b",
+            r"\bnot mine\b",
         ],
     ),
     ("refund_dispute", [r"\b(refund|chargeback|dispute)\b"]),

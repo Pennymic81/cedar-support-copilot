@@ -12,7 +12,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 | 2 | Document upload: chunking, embeddings, injection guard, search API | ✅ Done |
 | 3 | Chat API: retrieval, answers with citations, "I don't know" and handoff | ✅ Done |
 | 4 | Human handoff: money-safety rule, agent inbox, drafted replies | ✅ Done |
-| 5 | Evals: test set, accuracy, citation accuracy, handoff rate | ⏳ |
+| 5 | Evals: 38-question test set, scoring, threshold tuning, run history | ✅ Done |
 | 6 | Chat widget and analytics | ⏳ |
 | 7 | Deploy, demo video | ⏳ |
 
@@ -86,6 +86,7 @@ Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Cha
 | POST | `/api/tickets/<id>/reply/` | `{"use_draft": true}` sends the suggestion; `{"content": "..."}` sends your own or edited text; add `"close": true` to resolve |
 | POST | `/api/tickets/<id>/redraft/` | Regenerate the summary and draft |
 | POST | `/api/tickets/<id>/close/` | Resolve; the chat returns to the AI if the customer writes again |
+| GET | `/api/evals/runs/` and `/api/evals/runs/<id>/` | Eval history with per-question results |
 
 ## How ingestion works
 
@@ -130,6 +131,39 @@ Try it after `seed_demo` and `runserver`:
 curl -s localhost:8000/api/chat/ -H 'Content-Type: application/json' \
   -d '{"widget_key": "<from seed_demo output>", "message": "How long does a transfer to Spain take?"}'
 ```
+
+## Evals: measured, not guessed
+
+`evals/fixtures/cedar_pay_evals.json` holds 38 test questions: 25 the copilot should answer (with the document, section and key facts expected), 8 money or account problems, 1 request for a person and 4 off-topic questions it should hand off.
+
+```bash
+python manage.py load_evals
+python manage.py run_evals --label baseline          # scores and saves a run, shows what changed vs the last one
+python manage.py run_evals --sweep 0.15,0.2,0.25,0.3  # compare thresholds without saving
+```
+
+Each question runs through the real chat pipeline inside a transaction that is rolled back, so evals leave no chats or tickets behind. Every run records:
+
+| Metric | Meaning |
+|--------|---------|
+| Accuracy | Fully correct: right routing, right source section, key facts in the answer |
+| Routing accuracy | Answered vs handed off correctly (and for the right reason) |
+| Citation accuracy | Of the answers given, how many cite the expected section |
+| Handoff rate | Share of questions sent to a person |
+| **Unsafe answers** | Should have gone to a person, but the AI answered. Target: 0 |
+| Missed answers | The AI could have answered, but handed off |
+
+### Results so far (offline embedder, local answers)
+
+| Run | Change | Accuracy | Routing | Citations | Unsafe | Missed |
+|-----|--------|---------:|--------:|----------:|-------:|-------:|
+| baseline | — | 84.2% | 89.5% | 91.7% | **2** | 1 |
+| money-rule-v2 | Fraud rule also catches "it wasn't me" and "a payment I don't recognise" | 89.5% | 94.7% | 91.7% | **1** | 1 |
+| tuned-threshold-0.21 | Threshold chosen by sweep: lowest with zero unsafe answers | 89.5% | 94.7% | 91.3% | **0** | 2 |
+
+The remaining misses are retrieval limits of the offline hashing embedder (for example "weekend" vs "weekends ... next business day"). The next run to record is the same set with real embeddings (`EMBEDDING_PROVIDER=openai`).
+
+Caveat: the threshold was tuned on this same 38-question set, so add new questions over time rather than tuning only to these.
 
 ## Tests
 

@@ -5,8 +5,8 @@ from .models import EvalQuestion, EvalResult, EvalRun
 
 @admin.register(EvalQuestion)
 class EvalQuestionAdmin(admin.ModelAdmin):
-    list_display = ("question", "business", "should_handoff")
-    list_filter = ("business", "should_handoff")
+    list_display = ("question", "expected_outcome", "expected_reason", "expected_section")
+    list_filter = ("business", "expected_outcome", "expected_reason")
 
 
 class EvalResultInline(admin.TabularInline):
@@ -16,6 +16,6 @@ class EvalResultInline(admin.TabularInline):
 
 @admin.register(EvalRun)
 class EvalRunAdmin(admin.ModelAdmin):
-    list_display = ("label", "business", "accuracy", "citation_accuracy", "handoff_rate", "created_at")
+    list_display = ("label", "accuracy", "routing_accuracy", "citation_accuracy", "unsafe_answers", "created_at")
     list_filter = ("business",)
     inlines = [EvalResultInline]

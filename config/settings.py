@@ -106,7 +106,7 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
 # Retrieval score needed to answer without a person. Scores depend on the embedding
 # model, so the default follows the provider; tune it with the eval set.
 DEFAULT_CONFIDENCE_THRESHOLD = float(
-    os.getenv("DEFAULT_CONFIDENCE_THRESHOLD") or ("0.2" if EMBEDDING_PROVIDER == "local" else "0.45")
+    os.getenv("DEFAULT_CONFIDENCE_THRESHOLD") or ("0.21" if EMBEDDING_PROVIDER == "local" else "0.45")
 )
 # "local" answers with the best-matching policy text; "openai" uses any OpenAI-compatible chat API
 # (OpenAI, Groq, Gemini's OpenAI endpoint, OpenRouter...).
