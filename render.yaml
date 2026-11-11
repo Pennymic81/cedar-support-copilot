@@ -1,0 +1,36 @@
+# Render Blueprint: creates the web service and a Postgres database (with pgvector).
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo -> set DEMO_ADMIN_PASSWORD -> Apply.
+databases:
+  - name: cedar-db
+    plan: free
+    databaseName: cedar
+    user: cedar
+
+services:
+  - type: web
+    name: cedar-support-copilot
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /api/health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cedar-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DEMO_ADMIN_PASSWORD
+        sync: false # you type this in when you apply the Blueprint
+      - key: EMBEDDING_PROVIDER
+        value: local
+      - key: LLM_PROVIDER
+        value: local
+      # To use a real model later, set LLM_PROVIDER=openai and EMBEDDING_PROVIDER=openai,
+      # add LLM_API_KEY (and LLM_API_BASE / LLM_CHAT_MODEL for Groq or Gemini),
+      # then re-run seed_demo --refresh from the Render shell.

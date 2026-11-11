@@ -20,7 +20,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 | 4 | Human handoff: money-safety rule, agent inbox, drafted replies | ✅ Done |
 | 5 | Evals: 38-question test set, scoring, threshold tuning, run history | ✅ Done |
 | 6 | Embeddable chat widget, demo page, analytics API and dashboard | ✅ Done |
-| 7 | Deploy, demo video | ⏳ |
+| 7 | Deploy to Render (one-click Blueprint), demo video | ✅ Ready to deploy |
 
 ## Tech stack
 
@@ -187,6 +187,25 @@ Each question runs through the real chat pipeline inside a transaction that is r
 The remaining misses are retrieval limits of the offline hashing embedder (for example "weekend" vs "weekends ... next business day"). The next run to record is the same set with real embeddings (`EMBEDDING_PROVIDER=openai`).
 
 Caveat: the threshold was tuned on this same 38-question set, so add new questions over time rather than tuning only to these.
+
+## Deploy to Render
+
+The repo is a [Render Blueprint](https://render.com/docs/infrastructure-as-code): `render.yaml` creates the web service and a Postgres database (pgvector is enabled by the first migration).
+
+1. Sign in to [Render](https://dashboard.render.com) with GitHub.
+2. **New → Blueprint**, pick this repository.
+3. Enter a `DEMO_ADMIN_PASSWORD` when asked, then **Apply**.
+
+`build.sh` installs dependencies, collects static files, migrates, and loads the Cedar Pay demo (docs, eval set, a baseline eval run and demo traffic). Every step is safe to repeat on later deploys.
+
+After it's live:
+- `https://<your-service>.onrender.com/`: demo site with the chat widget
+- `/dashboard/`: log in as `admin` with your `DEMO_ADMIN_PASSWORD`
+- `/admin/`: Django admin
+
+Production settings turn on when `DJANGO_DEBUG=false`: HTTPS redirect (health checks exempt), secure cookies, HSTS, WhiteNoise for static files, and a hard failure if no secret key is set.
+
+Free-plan notes: the web service sleeps after inactivity (the first request takes ~1 minute), and Render's free Postgres expires after 30 days unless upgraded.
 
 ## Tests
 

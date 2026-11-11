@@ -17,6 +17,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--username", default="agent")
         parser.add_argument("--password", help="Password for the demo staff login (skip to not create one)")
+        parser.add_argument("--refresh", action="store_true", help="Re-ingest sample docs even if already loaded")
 
     def handle(self, *args, **opts):
         business, _ = Business.objects.get_or_create(name="Cedar Pay")
@@ -29,6 +30,7 @@ class Command(BaseCommand):
             user, created = User.objects.get_or_create(username=opts["username"])
             user.set_password(opts["password"])
             user.is_staff = True
+            user.is_superuser = True  # demo admin: can use the Django admin too
             user.save()
             StaffProfile.objects.update_or_create(
                 user=user, defaults={"business": business, "role": StaffProfile.Role.ADMIN}
@@ -38,7 +40,11 @@ class Command(BaseCommand):
         for path in sorted(SAMPLE_DIR.glob("*.md")):
             text = path.read_text(encoding="utf-8")
             title = text.splitlines()[0].lstrip("# ").strip()
-            Document.objects.filter(business=business, title=title).delete()
+            existing = Document.objects.filter(business=business, title=title)
+            if not opts["refresh"] and existing.filter(status=Document.Status.READY).exists():
+                self.stdout.write(f"  kept   {title}")
+                continue
+            existing.delete()
             doc = Document.objects.create(business=business, title=title, source_type=Document.SourceType.TEXT)
             ingest_document(doc, text=text)
             self.stdout.write(f"  {doc.status:<6} {title} ({doc.chunks.count()} chunks)")

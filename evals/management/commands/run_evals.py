@@ -23,12 +23,16 @@ class Command(BaseCommand):
         parser.add_argument("--threshold", type=float, help="Override the confidence threshold for this run")
         parser.add_argument("--sweep", help="Comma-separated thresholds to compare (results not saved)")
         parser.add_argument("--quiet", action="store_true", help="Only print the summary")
+        parser.add_argument("--if-none", action="store_true", help="Only run if this business has no runs yet")
 
     def handle(self, *args, **opts):
         business = Business.objects.filter(name=opts["business"]).first()
         if business is None:
             raise CommandError(f"No business named {opts['business']!r}. Run seed_demo first.")
 
+        if opts["if_none"] and business.eval_runs.exists():
+            self.stdout.write("Eval runs already exist; skipping.")
+            return
         try:
             if opts["sweep"]:
                 return self._sweep(business, [float(t) for t in opts["sweep"].split(",")])

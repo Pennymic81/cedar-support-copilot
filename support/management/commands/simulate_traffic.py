@@ -26,11 +26,15 @@ class Command(BaseCommand):
         parser.add_argument("--days", type=int, default=14)
         parser.add_argument("--seed", type=int, default=7)
         parser.add_argument("--clear", action="store_true", help="Only delete previous demo traffic")
+        parser.add_argument("--if-empty", action="store_true", help="Do nothing if demo traffic already exists")
 
     def handle(self, *args, **opts):
         business = Business.objects.filter(name=opts["business"]).first()
         if business is None:
             raise CommandError("Run seed_demo first.")
+        if opts["if_empty"] and Conversation.objects.filter(business=business, customer_ref=DEMO_REF).exists():
+            self.stdout.write("Demo traffic already exists; skipping.")
+            return
         deleted, _ = Conversation.objects.filter(business=business, customer_ref=DEMO_REF).delete()
         if opts["clear"]:
             self.stdout.write(f"Deleted {deleted} demo rows.")
