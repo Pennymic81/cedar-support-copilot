@@ -5,7 +5,11 @@
  *         data-widget-key="wk_..."
  *         data-api="https://YOUR-HOST"
  *         data-title="Cedar Assistant"
- *         data-accent="#0F766E" defer></script>
+ *         data-accent="#0F766E"
+ *         data-remember="tab" defer></script>
+ *
+ * data-remember: "tab" (default) keeps the chat until the browser tab is closed,
+ * so every new visit starts fresh; "always" keeps it across visits.
  */
 (function () {
   "use strict";
@@ -16,13 +20,20 @@
   var TITLE = script.getAttribute("data-title") || "Support";
   var ACCENT = script.getAttribute("data-accent") || "#0F766E";
   var STORE = "cedar-widget:" + KEY;
+  var REMEMBER = script.getAttribute("data-remember") === "always" ? "always" : "tab";
   var POLL_MS = 5000;
   if (!KEY) { console.warn("[cedar-widget] data-widget-key is missing"); return; }
 
   var state = { token: load(), status: "open", sending: false, seen: 0, pollTimer: null };
 
-  function load() { try { return localStorage.getItem(STORE) || ""; } catch (e) { return ""; } }
-  function save(t) { try { localStorage.setItem(STORE, t); } catch (e) {} }
+  function store() { return REMEMBER === "always" ? window.localStorage : window.sessionStorage; }
+  function load() {
+    try {
+      if (REMEMBER === "tab") localStorage.removeItem(STORE); // clear chats saved by older versions
+      return store().getItem(STORE) || "";
+    } catch (e) { return ""; }
+  }
+  function save(t) { try { store().setItem(STORE, t); } catch (e) {} }
 
   // ---------- DOM (shadow root keeps host page styles out) ----------
   var host = document.createElement("div");

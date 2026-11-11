@@ -114,10 +114,13 @@ Embeddings are pluggable via `EMBEDDING_PROVIDER`:
 <script src="https://YOUR-HOST/static/widget/cedar-widget.js"
         data-widget-key="wk_..."
         data-title="Cedar Assistant"
-        data-accent="#0F766E" defer></script>
+        data-accent="#0F766E"
+        data-remember="tab" defer></script>
 ```
 
-The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break it, and it can't break the host page). It shows source chips under answers, tells the customer when a person has taken over, polls for agent replies, keeps the conversation across page loads, and has a **New chat** button to start fresh. The chat endpoints allow cross-origin calls and ignore cookies, so a logged-in staff session can never be used through the widget.
+`data-remember="tab"` (default) keeps the chat until the browser tab is closed, so each visit starts fresh; `"always"` keeps it across visits.
+
+The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break it, and it can't break the host page). It shows source chips under answers, tells the customer when a person has taken over, polls for agent replies, keeps the conversation while the tab is open, and has a **New chat** button to start fresh. The chat endpoints allow cross-origin calls and ignore cookies, so a logged-in staff session can never be used through the widget.
 
 Pages:
 - `/`: Cedar Pay demo page with the widget.
