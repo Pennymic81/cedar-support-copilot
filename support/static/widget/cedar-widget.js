@@ -40,8 +40,8 @@
     ".head{background:" + ACCENT + ";color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}" +
     ".head h2{margin:0;font-size:15px;font-weight:600}.head p{margin:2px 0 0;font-size:12px;opacity:.85}" +
     ".close{background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer;width:32px;height:32px}" +
-    ".actions{display:flex;align-items:center;gap:4px}" +
-    ".new{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:12px;border-radius:999px;padding:6px 10px;cursor:pointer}" +
+    ".actions{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:8px}" +
+    ".new{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:12px;border-radius:999px;padding:6px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0}" +
     ".new:hover{background:rgba(255,255,255,.28)}" +
     ".log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FBFBFA}" +
     ".msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}" +
@@ -63,7 +63,7 @@
     '<button class="launcher" aria-label="Open support chat" aria-expanded="false">' +
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></button>' +
     '<section class="panel" role="dialog" aria-label="' + esc(TITLE) + ' chat">' +
-    '<div class="head"><div><h2>' + esc(TITLE) + "</h2><p>Answers from our help docs · a person can step in</p></div>" +
+    '<div class="head"><div><h2>' + esc(TITLE) + "</h2><p>Answers from our docs · a person can step in</p></div>" +
     '<div class="actions"><button class="new" type="button">New chat</button>' +
     '<button class="close" aria-label="Close chat">×</button></div></div>' +
     '<div class="log" aria-live="polite"></div>' +
