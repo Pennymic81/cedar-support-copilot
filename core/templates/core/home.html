@@ -29,8 +29,8 @@
 </div>
 <div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: center; font-size: 15px">
 <a href="{% url 'dashboard' %}" style="text-decoration: none">Team login</a>
-<a href="#" style="text-decoration: none">Contact us</a>
-<a href="#" style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 12px 16px; border-radius: 6px">Open an account</a>
+<a href="#" data-open-chat style="text-decoration: none">Contact us</a>
+<a href="#" data-demo-only style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 12px 16px; border-radius: 6px">Open an account</a>
 <a href="#" data-open-chat style="border: 1px solid #16181D; text-decoration: none; padding: 11px 15px; border-radius: 6px">Cedar Assistant →</a>
 </div>
 </header>
@@ -52,7 +52,7 @@
 </h1>
 <p style="margin: 0; max-width: 600px; font-family: 'Source Serif 4', Georgia, serif; font-size: 19px; line-height: 1.6; color: #2A2D35">Send money to family and friends abroad in seconds, pay bills, and save toward what matters. And when you have a question, Cedar Assistant answers right away, with a real person ready whenever it involves your money.</p>
 <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center">
-<a href="#" style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 15px 20px; border-radius: 6px; font-size: 17px">Open an account</a>
+<a href="#" data-demo-only style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 15px 20px; border-radius: 6px; font-size: 17px">Open an account</a>
 <a href="#product" style="border: 1px solid #16181D; text-decoration: none; padding: 14px 19px; border-radius: 6px; font-size: 17px">See how it works</a>
 </div>
 <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5B616E"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l3 3 5-6"></path></svg>Free to open. No paperwork.</span>
@@ -177,14 +177,14 @@
 <section style="padding: 0 24px 88px">
 <div style="max-width: 1152px; margin: 0 auto; background: #16181D; color: #FFFFFF; padding: 56px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center">
 <h2 style="margin: 0; font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1"><span style="color: #9A9A94">Your money,</span><br>made simple.</h2>
-<a href="#" style="background: #FFFFFF; color: #16181D; text-decoration: none; padding: 15px 22px; border-radius: 6px; font-size: 17px">Open an account</a>
+<a href="#" data-demo-only style="background: #FFFFFF; color: #16181D; text-decoration: none; padding: 15px 22px; border-radius: 6px; font-size: 17px">Open an account</a>
 </div>
 </section>
 
 <footer style="border-top: 1px solid #EDEBE6">
 <div style="max-width: 1200px; margin: 0 auto; padding: 32px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; font-size: 14px; color: #5B616E">
 <span>© 2026 Cedar Pay · demo brand for a portfolio project · Licensed by [REGULATOR]</span>
-<div style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" style="color: #4A505C; text-decoration: none">Privacy</a><a href="#" style="color: #4A505C; text-decoration: none">Terms</a><a href="#" data-open-chat style="color: #4A505C; text-decoration: none">Support</a><a href="https://github.com/Pennymic81/cedar-support-copilot" style="color: #4A505C; text-decoration: none">GitHub</a></div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" data-demo-only style="color: #4A505C; text-decoration: none">Privacy</a><a href="#" data-demo-only style="color: #4A505C; text-decoration: none">Terms</a><a href="#" data-open-chat style="color: #4A505C; text-decoration: none">Support</a><a href="https://github.com/Pennymic81/cedar-support-copilot" style="color: #4A505C; text-decoration: none">GitHub</a></div>
 </div>
 </footer>
 </div>
@@ -199,12 +199,23 @@ a.onclick=function(){show(false)};b.onclick=function(){show(true)};show(false);
 </script>{% if widget_key %}
 <script src="{% static 'widget/cedar-widget.js' %}" data-widget-key="{{ widget_key }}" data-title="Cedar Assistant" defer></script>
 {% endif %}
+<div id="demo-note" role="status" aria-live="polite" style="position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); max-width: min(560px, calc(100vw - 32px)); background: #16181D; color: #FFFFFF; padding: 14px 18px; border-radius: 12px; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5; display: none; z-index: 2147482000">
+<strong>Cedar Pay is a demo brand</strong>, so there are no real accounts or apps. The real product here is the support assistant: try asking it something.
+</div>
 <script>
-document.addEventListener("click", function (e) {
-  var link = e.target.closest("[data-open-chat]");
-  if (!link) return;
-  e.preventDefault();
-  if (window.CedarWidget) window.CedarWidget.open();
-});
+(function () {
+  var note = document.getElementById("demo-note"), timer;
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest("[data-open-chat], [data-demo-only]");
+    if (!link) return;
+    e.preventDefault();
+    if (link.hasAttribute("data-demo-only")) {
+      note.style.display = "block";
+      clearTimeout(timer);
+      timer = setTimeout(function () { note.style.display = "none"; }, 6000);
+    }
+    if (window.CedarWidget) window.CedarWidget.open();
+  });
+})();
 </script>
 </body></html>
