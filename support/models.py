@@ -1,8 +1,14 @@
+import secrets
+
 from django.conf import settings
 from django.db import models
 
 from core.models import Business
 from knowledge.models import Chunk
+
+
+def new_conversation_token() -> str:
+    return secrets.token_urlsafe(24)
 
 
 class Conversation(models.Model):
@@ -15,6 +21,10 @@ class Conversation(models.Model):
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="conversations")
     customer_ref = models.CharField(max_length=200, blank=True, help_text="Anonymous id or email")
+    token = models.CharField(
+        max_length=64, unique=True, default=new_conversation_token,
+        help_text="Secret the widget uses to continue or read this chat",
+    )
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.OPEN)
     created_at = models.DateTimeField(auto_now_add=True)
 

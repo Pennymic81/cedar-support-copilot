@@ -10,7 +10,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 |-----|------|--------|
 | 1 | Project setup: Django, Postgres + pgvector, data models, admin | ✅ Done |
 | 2 | Document upload: chunking, embeddings, injection guard, search API | ✅ Done |
-| 3 | Chat API: retrieval, answers with citations, "I don't know" | ⏳ |
+| 3 | Chat API: retrieval, answers with citations, "I don't know" and handoff | ✅ Done |
 | 4 | Human handoff: confidence threshold, ticket queue, drafted replies | ⏳ |
 | 5 | Evals: test set, accuracy, citation accuracy, handoff rate | ⏳ |
 | 6 | Chat widget and analytics | ⏳ |
@@ -20,7 +20,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 
 - **Backend:** Django 5 + Django REST Framework
 - **Database and vector search:** PostgreSQL 16 with pgvector (HNSW index, cosine distance)
-- **AI:** pluggable embeddings (offline by default, any OpenAI-compatible API in production)
+- **AI:** pluggable embeddings and answers (offline by default; any OpenAI-compatible API such as OpenAI, Groq or Gemini)
 - **Testing:** Django tests, eval set, Postman collection
 
 ## Project layout
@@ -69,7 +69,7 @@ python manage.py ask "How long does a transfer to Spain take?"
 
 ## API (so far)
 
-All endpoints need a signed-in staff user (session or `/api-auth/login/`).
+Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Chat endpoints use the business's public widget key plus a secret per-conversation token, and are rate limited (`CHAT_RATE_LIMIT`, default 30/min).
 
 | Method | Endpoint | What it does |
 |--------|----------|--------------|
@@ -78,6 +78,8 @@ All endpoints need a signed-in staff user (session or `/api-auth/login/`).
 | GET / DELETE | `/api/documents/<id>/` | View or remove a document and its chunks |
 | POST | `/api/documents/<id>/reprocess/` | Re-run ingestion (PDF/URL) |
 | POST | `/api/search/` | `{"query": "...", "k": 5}` → closest chunks with scores |
+| POST | `/api/chat/` | **Public (widget).** `{"widget_key", "message", "conversation_token"?}` → reply, confidence, citations, `handed_off` |
+| GET | `/api/chat/<conversation_token>/?widget_key=…` | **Public (widget).** Chat history with citations |
 
 ## How ingestion works
 
@@ -89,6 +91,29 @@ All endpoints need a signed-in staff user (session or `/api-auth/login/`).
 Embeddings are pluggable via `EMBEDDING_PROVIDER`:
 - `local` (default): offline hashing embedder, no API key, good for development and tests.
 - `openai`: any OpenAI-compatible embeddings API; set `LLM_API_KEY`, `EMBEDDING_MODEL` and, if needed, `LLM_API_BASE`. Run `reprocess` on existing documents after switching.
+
+## How a chat turn works
+
+1. The customer's message is saved.
+2. If the chat is already with a person, the AI stays quiet.
+3. If the customer asks for a person ("can I talk to someone?"), it hands off.
+4. Otherwise it retrieves the closest policy sections. The top score is the **confidence**.
+5. Below the business's threshold → **hand off**: the chat is escalated and a ticket is created.
+6. Otherwise the answer step writes a reply **only from those sections**, citing them as `[1]`, `[2]`. If the model says the sources don't answer it, or the model is down, it hands off instead of guessing.
+7. The reply is saved with its citations (document and section).
+
+Answers are pluggable via `LLM_PROVIDER`:
+- `local` (default): no model, replies with the best-matching policy section. Grounded and cited, but not conversational.
+- `openai`: any OpenAI-compatible chat API. Set `LLM_API_KEY`, `LLM_CHAT_MODEL` and `LLM_API_BASE`, for example `https://api.openai.com/v1`, `https://api.groq.com/openai/v1` or `https://generativelanguage.googleapis.com/v1beta/openai`.
+
+The confidence threshold defaults to 0.2 for the offline embedder and 0.45 for real embeddings; set it per business in the admin. Day 5's evals are how to tune it.
+
+Try it after `seed_demo` and `runserver`:
+
+```bash
+curl -s localhost:8000/api/chat/ -H 'Content-Type: application/json' \
+  -d '{"widget_key": "<from seed_demo output>", "message": "How long does a transfer to Spain take?"}'
+```
 
 ## Tests
 

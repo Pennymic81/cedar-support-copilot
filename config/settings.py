@@ -92,14 +92,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {"chat": os.getenv("CHAT_RATE_LIMIT", "30/min")},
 }
 
 # Copilot settings
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
-DEFAULT_CONFIDENCE_THRESHOLD = float(os.getenv("DEFAULT_CONFIDENCE_THRESHOLD", "0.75"))
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1")
 # "local" works offline with no key; "openai" uses any OpenAI-compatible embeddings API.
 EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "10"))
+# Retrieval score needed to answer without a person. Scores depend on the embedding
+# model, so the default follows the provider; tune it with the eval set.
+DEFAULT_CONFIDENCE_THRESHOLD = float(
+    os.getenv("DEFAULT_CONFIDENCE_THRESHOLD") or ("0.2" if EMBEDDING_PROVIDER == "local" else "0.45")
+)
+# "local" answers with the best-matching policy text; "openai" uses any OpenAI-compatible chat API
+# (OpenAI, Groq, Gemini's OpenAI endpoint, OpenRouter...).
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "local")
+LLM_CHAT_MODEL = os.getenv("LLM_CHAT_MODEL", "gpt-4o-mini")
+RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "4"))

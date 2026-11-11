@@ -13,7 +13,11 @@ class Business(models.Model):
 
     name = models.CharField(max_length=200)
     widget_key = models.CharField(max_length=64, unique=True, default=new_widget_key)
-    confidence_threshold = models.FloatField(default=settings.DEFAULT_CONFIDENCE_THRESHOLD)
+    confidence_threshold = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Minimum retrieval score to answer without a person. Blank = the provider's default.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -21,6 +25,12 @@ class Business(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def effective_threshold(self) -> float:
+        if self.confidence_threshold is not None:
+            return self.confidence_threshold
+        return settings.DEFAULT_CONFIDENCE_THRESHOLD
 
 
 class StaffProfile(models.Model):

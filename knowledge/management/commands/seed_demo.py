@@ -20,6 +20,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         business, _ = Business.objects.get_or_create(name="Cedar Pay")
+        business.confidence_threshold = None  # use the provider's default
+        business.save(update_fields=["confidence_threshold"])
         self.stdout.write(f"Business: {business.name} (widget key {business.widget_key})")
 
         if opts["password"]:
