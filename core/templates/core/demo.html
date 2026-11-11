@@ -1,0 +1,51 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cedar Pay · Support copilot demo</title>
+<style>
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: #16181D; background: #fff; }
+  .bar { background: #EDEBE6; padding: 10px 24px; text-align: center; font-size: 14px; }
+  .tag { background: #16181D; color: #fff; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 4px; margin-right: 8px; }
+  header { max-width: 1100px; margin: 0 auto; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .logo { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; }
+  header a { color: #16181D; text-decoration: none; font-size: 15px; margin-left: 20px; }
+  main { max-width: 820px; margin: 0 auto; padding: 72px 24px 120px; text-align: center; }
+  .eyebrow { color: #5B616E; font-size: 15px; }
+  h1 { font-size: clamp(44px, 8vw, 76px); line-height: 1; letter-spacing: -0.045em; font-weight: 500; margin: 20px 0 28px; }
+  h1 span { color: #9A9A94; display: block; }
+  p.lead { font-family: Georgia, serif; font-size: 19px; line-height: 1.6; color: #2A2D35; max-width: 600px; margin: 0 auto 32px; }
+  .try { display: inline-block; text-align: left; background: #F6F5F1; border-radius: 12px; padding: 20px 24px; font-size: 15px; line-height: 1.9; }
+  .try strong { display: block; margin-bottom: 4px; }
+  .warn { background: #FEF3C7; color: #7A4B00; padding: 16px; border-radius: 10px; }
+  code { background: #EDEBE6; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="bar"><span class="tag">Demo brand</span>Cedar Pay is a fictional company, built to showcase an AI support copilot.</div>
+<header>
+  <div class="logo">cedar</div>
+  <nav><a href="https://github.com/Pennymic81/cedar-support-copilot">GitHub</a><a href="{% url 'dashboard' %}">Team dashboard</a></nav>
+</header>
+<main>
+  <div class="eyebrow">Send money across borders, instantly</div>
+  <h1><span>Simple money for</span>everyday life<span>and every goal.</span></h1>
+  <p class="lead">Questions? Open the chat in the corner. It answers from Cedar Pay's own policies, shows its source, and passes anything involving your money to a person.</p>
+  {% if widget_key %}
+  <div class="try">
+    <strong>Try asking:</strong>
+    “How long does a transfer to Spain take?”<br>
+    “How much does an international transfer cost?”<br>
+    “I was charged but my transfer failed”<br>
+    “Do you offer car loans?”
+  </div>
+  {% else %}
+  <p class="warn">No demo business yet. Run <code>python manage.py seed_demo</code>, then reload.</p>
+  {% endif %}
+</main>
+{% if widget_key %}
+<script src="{% static 'widget/cedar-widget.js' %}" data-widget-key="{{ widget_key }}" data-title="Cedar Assistant" defer></script>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support dashboard · {{ business.name }}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --ink: #16181D; --muted: #5B616E; --line: #E5E5E1; --bg: #F7F7F5; --teal: #0F766E; --amber: #B45309; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: var(--ink); color: #fff; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header a { color: #D4D4CE; font-size: 14px; margin-left: 18px; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .top { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 12px; }
+  .top h2 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  .top p { margin: 4px 0 0; color: var(--muted); }
+  select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid #D4D4CE; background: #fff; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .tile, .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .tile span { display: block; font-size: 13px; color: var(--muted); }
+  .tile strong { display: block; font-size: 28px; letter-spacing: -0.02em; margin-top: 6px; }
+  .tile small { color: var(--muted); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
+  .card h3 { margin: 0 0 14px; font-size: 16px; }
+  .chart { position: relative; height: 260px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 13px; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 6px; border-bottom: 1px solid #F0F0EC; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bad { color: #A32D2D; font-weight: 600; }
+  .good { color: var(--teal); font-weight: 600; }
+  .empty { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cedar Support Copilot · {{ business.name }}</h1>
+  <nav><a href="/">Demo site</a><a href="/admin/support/ticket/">Tickets (admin)</a><a href="/admin/logout/">Log out</a></nav>
+</header>
+<main>
+  <div class="top">
+    <div><h2>How support is going</h2><p id="period">Loading…</p></div>
+    <label>Period
+      <select id="days"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+    </label>
+  </div>
+  <section class="tiles" aria-label="Key numbers">
+    <div class="tile"><span>Conversations</span><strong id="t-total">–</strong></div>
+    <div class="tile"><span>Resolved by AI</span><strong id="t-ai" class="good">–</strong><small id="t-ai-n"></small></div>
+    <div class="tile"><span>Handed to a person</span><strong id="t-handoff">–</strong><small id="t-handoff-n"></small></div>
+    <div class="tile"><span>Policy drafts sent as is</span><strong id="t-drafts">–</strong><small id="t-drafts-n"></small></div>
+    <div class="tile"><span>Median wait for a person</span><strong id="t-wait">–</strong><small>handoff → first agent reply</small></div>
+    <div class="tile"><span>Open tickets</span><strong id="t-open">–</strong></div>
+  </section>
+  <section class="grid">
+    <div class="card"><h3>Conversations per day</h3><div class="chart"><canvas id="c-daily" aria-label="Conversations per day, split by AI-resolved and handed off" role="img"></canvas></div></div>
+    <div class="card"><h3>Why chats were handed off</h3><div class="chart"><canvas id="c-reasons" aria-label="Handoff reasons" role="img"></canvas></div></div>
+  </section>
+  <section class="grid">
+    <div class="card"><h3>Top topics the AI answered</h3><table><thead><tr><th>Policy section</th><th class="num">Answers</th></tr></thead><tbody id="topics"></tbody></table></div>
+    <div class="card"><h3>Eval runs</h3><table><thead><tr><th>Run</th><th class="num">Accuracy</th><th class="num">Citations</th><th class="num">Unsafe</th></tr></thead><tbody id="evals"></tbody></table></div>
+  </section>
+</main>
+<script>
+(function () {
+  var REASON_LABELS = {
+    money_missing: "Money missing / failed charge", fraud: "Possible fraud", refund_dispute: "Refund or dispute",
+    account_access: "Blocked account or card", low_confidence: "No matching policy", customer_requested: "Asked for a person",
+    sensitive: "Money or account"
+  };
+  var charts = {};
+  function pct(x) { return x == null ? "–" : Math.round(x * 100) + "%"; }
+  function set(id, v) { document.getElementById(id).textContent = v; }
+  function rows(id, items, render, empty) {
+    var tb = document.getElementById(id);
+    tb.innerHTML = "";
+    if (!items.length) { tb.innerHTML = '<tr><td class="empty" colspan="4">' + empty + "</td></tr>"; return; }
+    items.forEach(function (it) { var tr = document.createElement("tr"); tr.innerHTML = render(it); tb.appendChild(tr); });
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function chart(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart(document.getElementById(id), config); }
+
+  function load() {
+    var days = document.getElementById("days").value;
+    fetch("/api/analytics/?days=" + days, { credentials: "same-origin" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(render)
+      .catch(function (e) { set("period", "Couldn't load analytics (" + e.message + ")."); });
+  }
+
+  function render(d) {
+    set("period", "Last " + d.period_days + " days · average AI confidence " + (d.avg_ai_confidence == null ? "–" : d.avg_ai_confidence));
+    set("t-total", d.conversations);
+    set("t-ai", pct(d.ai_resolution_rate)); set("t-ai-n", d.resolved_by_ai + " chats");
+    set("t-handoff", pct(d.handoff_rate)); set("t-handoff-n", d.handed_off + " chats");
+    set("t-drafts", pct(d.drafts.approval_rate));
+    set("t-drafts-n", d.drafts.approved + " approved · " + d.drafts.edited + " edited · " + d.drafts.written + " with no policy");
+    set("t-wait", d.median_minutes_to_agent_reply == null ? "–" : d.median_minutes_to_agent_reply + " min");
+    set("t-open", d.open_tickets);
+
+    chart("c-daily", {
+      type: "bar",
+      data: {
+        labels: d.daily.map(function (x) { return x.day.slice(5); }),
+        datasets: [
+          { label: "Resolved by AI", data: d.daily.map(function (x) { return x.total - x.handed_off; }), backgroundColor: "#0F766E", borderRadius: 4 },
+          { label: "Handed off", data: d.daily.map(function (x) { return x.handed_off; }), backgroundColor: "#F2B880", borderRadius: 4 }
+        ]
+      },
+      options: { maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+
+    var reasons = Object.keys(d.handoff_reasons);
+    chart("c-reasons", {
+      type: "bar",
+      data: { labels: reasons.map(function (r) { return REASON_LABELS[r] || r; }), datasets: [{ label: "Handoffs", data: reasons.map(function (r) { return d.handoff_reasons[r]; }), backgroundColor: "#B45309", borderRadius: 4 }] },
+      options: { indexAxis: "y", maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } }
+    });
+
+    rows("topics", d.top_topics, function (t) { return "<td>" + esc(t.topic) + '</td><td class="num">' + t.count + "</td>"; }, "No AI answers yet.");
+    rows("evals", d.eval_runs.slice().reverse(), function (r) {
+      return "<td>" + esc(r.label) + '</td><td class="num">' + pct(r.accuracy) + '</td><td class="num">' + pct(r.citation_accuracy) +
+        '</td><td class="num ' + (r.unsafe_answers ? "bad" : "good") + '">' + r.unsafe_answers + "</td>";
+    }, "No eval runs yet. Run <code>manage.py run_evals</code>.");
+  }
+
+  document.getElementById("days").addEventListener("change", load);
+  load();
+})();
+</script>
+</body>
+</html>

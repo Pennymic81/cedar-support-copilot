@@ -4,6 +4,12 @@ An AI support layer for fintech companies. It answers customers **only from the 
 
 It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 
+| Chat widget | Team dashboard |
+|---|---|
+| ![Chat widget answering with a source and handing off a money problem](docs/screenshots/widget.png) | ![Dashboard with AI resolution rate, handoff reasons, top topics and eval runs](docs/screenshots/dashboard.png) |
+
+*Dashboard numbers come from `simulate_traffic` demo data; the eval runs are real.*
+
 ## Status
 
 | Day | Goal | Status |
@@ -13,7 +19,7 @@ It's shown on **Cedar Pay**, a fictional money app built as a demo brand.
 | 3 | Chat API: retrieval, answers with citations, "I don't know" and handoff | ✅ Done |
 | 4 | Human handoff: money-safety rule, agent inbox, drafted replies | ✅ Done |
 | 5 | Evals: 38-question test set, scoring, threshold tuning, run history | ✅ Done |
-| 6 | Chat widget and analytics | ⏳ |
+| 6 | Embeddable chat widget, demo page, analytics API and dashboard | ✅ Done |
 | 7 | Deploy, demo video | ⏳ |
 
 ## Tech stack
@@ -87,6 +93,7 @@ Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Cha
 | POST | `/api/tickets/<id>/redraft/` | Regenerate the summary and draft |
 | POST | `/api/tickets/<id>/close/` | Resolve; the chat returns to the AI if the customer writes again |
 | GET | `/api/evals/runs/` and `/api/evals/runs/<id>/` | Eval history with per-question results |
+| GET | `/api/analytics/?days=30` | Dashboard metrics: AI resolution and handoff rates, reasons, top topics, draft use, wait time, daily volume, eval runs |
 
 ## How ingestion works
 
@@ -98,6 +105,22 @@ Staff endpoints need a signed-in staff user (session or `/api-auth/login/`). Cha
 Embeddings are pluggable via `EMBEDDING_PROVIDER`:
 - `local` (default): offline hashing embedder, no API key, good for development and tests.
 - `openai`: any OpenAI-compatible embeddings API; set `LLM_API_KEY`, `EMBEDDING_MODEL` and, if needed, `LLM_API_BASE`. Run `reprocess` on existing documents after switching.
+
+## Add the chat widget to any site
+
+```html
+<script src="https://YOUR-HOST/static/widget/cedar-widget.js"
+        data-widget-key="wk_..."
+        data-title="Cedar Assistant"
+        data-accent="#0F766E" defer></script>
+```
+
+The widget is plain JavaScript in a shadow DOM (the host page's CSS can't break it, and it can't break the host page). It shows source chips under answers, tells the customer when a person has taken over, polls for agent replies, and keeps the conversation across page loads. The chat endpoints allow cross-origin calls and ignore cookies, so a logged-in staff session can never be used through the widget.
+
+Pages:
+- `/`: Cedar Pay demo page with the widget.
+- `/dashboard/`: staff dashboard (log in with a staff user, e.g. the one `seed_demo --password` creates).
+- `python manage.py simulate_traffic`: fills the dashboard with demo conversations through the real pipeline (`--clear` removes them).
 
 ## How a chat turn works
 

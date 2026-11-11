@@ -4,10 +4,10 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from core.views import health
+from core.views import dashboard, demo, health
 from evals.views import EvalRunViewSet
 from knowledge.views import DocumentViewSet, search_view
-from support.agent_views import TicketViewSet
+from support.agent_views import TicketViewSet, analytics
 from support.views import chat, conversation_history
 
 admin.site.site_header = "Cedar Support Copilot"
@@ -19,7 +19,10 @@ router.register("tickets", TicketViewSet, basename="ticket")
 router.register("evals/runs", EvalRunViewSet, basename="eval-run")
 
 urlpatterns = [
+    path("", demo, name="demo"),
+    path("dashboard/", dashboard, name="dashboard"),
     path("admin/", admin.site.urls),
+    path("api/analytics/", analytics, name="analytics"),
     path("api/health/", health, name="health"),
     path("api/search/", search_view, name="search"),
     path("api/chat/", chat, name="chat"),

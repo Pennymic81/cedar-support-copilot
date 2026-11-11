@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -20,6 +20,7 @@ def _business_for_key(key):
 
 
 @api_view(["POST"])
+@authentication_classes([])  # widget calls carry no cookies or user identity
 @permission_classes([AllowAny])
 @throttle_classes([ChatThrottle])
 def chat(request):
@@ -59,6 +60,7 @@ def chat(request):
 
 
 @api_view(["GET"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 @throttle_classes([ChatThrottle])
 def conversation_history(request, token):

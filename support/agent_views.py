@@ -3,13 +3,14 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from core.permissions import IsBusinessStaff, business_for
 
 from .models import Conversation, Message, Ticket
 from .serializers import AgentReplySerializer, TicketDetailSerializer, TicketListSerializer
+from .services.analytics import summary
 from .services.drafts import NO_POLICY_DRAFT, draft_for_ticket
 
 
@@ -115,3 +116,14 @@ class TicketViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.G
         convo = ticket.conversation
         convo.status = Conversation.Status.RESOLVED
         convo.save(update_fields=["status"])
+
+
+@api_view(["GET"])
+@permission_classes([IsBusinessStaff])
+def analytics(request):
+    """Dashboard metrics for the last ?days=30 (1-365)."""
+    try:
+        days = min(max(int(request.query_params.get("days", 30)), 1), 365)
+    except ValueError:
+        days = 30
+    return Response(summary(business_for(request), days))
