@@ -21,7 +21,7 @@ def demo(request):
     from .models import Business
 
     business = Business.objects.filter(name="Cedar Pay").first()
-    return render(request, "core/demo.html", {"widget_key": business.widget_key if business else ""})
+    return render(request, "core/home.html", {"widget_key": business.widget_key if business else ""})
 
 
 def dashboard(request):

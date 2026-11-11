@@ -218,6 +218,8 @@
     }
   }
   launcher.addEventListener("click", function () { toggle(!panel.classList.contains("open")); });
+  // Lets the host page open the chat from its own buttons: window.CedarWidget.open()
+  window.CedarWidget = { open: function () { toggle(true); }, close: function () { toggle(false); } };
   root.querySelector(".close").addEventListener("click", function () { toggle(false); });
   root.querySelector(".new").addEventListener("click", function () {
     state.token = ""; save(""); state.seen = 0; stopPolling();
