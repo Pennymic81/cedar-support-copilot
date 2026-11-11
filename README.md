@@ -205,6 +205,8 @@ After it's live:
 
 Production settings turn on when `DJANGO_DEBUG=false`: HTTPS redirect (health checks exempt), secure cookies, HSTS, WhiteNoise for static files, and a hard failure if no secret key is set.
 
+A [2-minute demo script](docs/DEMO_SCRIPT.md) walks through the live site.
+
 Free-plan notes: the web service sleeps after inactivity (the first request takes ~1 minute), and Render's free Postgres expires after 30 days unless upgraded.
 
 ## Tests
