@@ -3,7 +3,40 @@
 <title>Cedar Pay – Simple money for everyday life</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap" rel="stylesheet">
-<style>body{margin:0}a{color:#16181D}a:hover{color:#0F766E}#view-app,#view-ai{position:absolute;inset:0}</style>
+<style>body{margin:0}a{color:#16181D}a:hover{color:#0F766E}#view-app,#view-ai{position:absolute;inset:0}
+/* Tablets and phones: one column, no overlapping collage or mockups */
+@media (max-width: 1023px){
+.hdr-right .hide-m{display:none !important}
+.hero{padding:16px 0 56px !important;gap:28px !important}
+.hero-text{order:1}
+.hero-photos{order:2;flex:1 1 100% !important;min-height:0 !important;flex-direction:row !important;gap:10px !important;padding:0 20px;max-width:720px;margin:0 auto}
+.hero-photos img{margin:0 !important;width:50% !important;height:260px !important}
+.hero-photos-2{display:none !important}
+.stage{height:500px !important}
+.mock-big{display:none !important}
+.mock-card{left:50% !important;right:auto !important;transform:translateX(-50%);width:min(380px, calc(100% - 32px)) !important;top:24px !important;height:auto !important}
+}
+/* Phones */
+@media (max-width: 760px){
+.hdr{padding:14px 20px !important;gap:12px !important}
+.hdr-left{display:contents !important}
+.hdr-logo{order:1}
+.hdr-right{order:2;gap:14px !important;font-size:14px !important}
+.hdr-right .btn{padding:9px 12px !important}
+.hdr-nav{order:3;width:100%;flex-wrap:nowrap !important;overflow-x:auto;gap:22px !important;padding-bottom:2px;white-space:nowrap}
+.hero-text{gap:20px !important;padding:0 20px !important}
+.hero-text h1{font-size:44px !important;line-height:1.02 !important}
+.hero-text p{font-size:17px !important}
+.hero-photos img{height:230px !important}
+.product{padding:56px 20px !important;gap:24px !important}
+.product h2{font-size:28px !important}
+#tab-app,#tab-ai{font-size:16px !important;padding:14px 16px !important}
+.stage{height:480px !important}
+.features{padding:56px 20px !important;gap:28px !important}
+.cta-wrap{padding:0 20px 56px !important}
+.cta{padding:32px 24px !important}
+.cta h2{font-size:30px !important}
+}</style>
 </head><body>
 
 <div style="background: #FFFFFF; font-family: Inter, system-ui, sans-serif; color: #16181D">
@@ -14,36 +47,36 @@
 <a href="#" data-open-chat style="color: #16181D; font-weight: 500">Try the copilot</a>
 </div>
 
-<header style="max-width: 1360px; margin: 0 auto; padding: 22px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center">
-<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px">
-<div style="display: flex; align-items: center; gap: 8px">
+<header class="hdr" style="max-width: 1360px; margin: 0 auto; padding: 22px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center">
+<div class="hdr-left" style="display: flex; flex-wrap: wrap; align-items: center; gap: 36px">
+<div class="hdr-logo" style="display: flex; align-items: center; gap: 8px">
 <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 9h-4l5 7H4l5-7H5z"></path><path d="M12 18v4"></path></svg>
 <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.04em">cedar</span>
 </div>
-<nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 28px; font-size: 15px">
+<nav class="hdr-nav" aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 28px; font-size: 15px">
 <a href="#product" style="text-decoration: none">Personal</a>
 <a href="#product" style="text-decoration: none">Business</a>
 <a href="#features" style="text-decoration: none">Fees</a>
 <a href="#" data-open-chat style="text-decoration: none">Help</a>
 </nav>
 </div>
-<div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: center; font-size: 15px">
+<div class="hdr-right" style="display: flex; flex-wrap: wrap; gap: 22px; align-items: center; font-size: 15px">
 <a href="{% url 'dashboard' %}" style="text-decoration: none">Team login</a>
-<a href="#" data-open-chat style="text-decoration: none">Contact us</a>
-<a href="#" data-demo-only style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 12px 16px; border-radius: 6px">Open an account</a>
-<a href="#" data-open-chat style="border: 1px solid #16181D; text-decoration: none; padding: 11px 15px; border-radius: 6px">Cedar Assistant →</a>
+<a href="#" data-open-chat class="hide-m" style="text-decoration: none">Contact us</a>
+<a href="#" data-demo-only class="btn" style="background: #16181D; color: #FFFFFF; text-decoration: none; padding: 12px 16px; border-radius: 6px">Open an account</a>
+<a href="#" data-open-chat class="hide-m" style="border: 1px solid #16181D; text-decoration: none; padding: 11px 15px; border-radius: 6px">Cedar Assistant →</a>
 </div>
 </header>
 
 <section style="position: relative; border-bottom: 1px solid #EDEBE6">
-<div style="max-width: 1440px; margin: 0 auto; padding: 40px 0 190px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center">
+<div class="hero" style="max-width: 1440px; margin: 0 auto; padding: 40px 0 190px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center">
 
-<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 0; position: relative; min-height: 500px">
+<div class="hero-photos" style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 0; position: relative; min-height: 500px">
 <img src="{% static 'site/img/photo1.jpg' %}" alt="A smiling woman with an afro and glasses on a city street" style="margin-left: 48px; width: 240px; height: 320px; object-fit: cover; object-position: 56% 30%; display: block">
 <img src="{% static 'site/img/photo2.jpg' %}" alt="A busy market street with shop awnings and shoppers on a sunny day" style="margin-top: -150px; width: 160px; height: 320px; object-fit: cover; object-position: 45% 55%; display: block; position: relative">
 </div>
 
-<div style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px; padding: 0 24px">
+<div class="hero-text" style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px; padding: 0 24px">
 <span style="font-size: 15px; color: #5B616E">Send money across borders, instantly</span>
 <h1 style="margin: 0; font-size: 84px; line-height: 0.98; letter-spacing: -0.045em; font-weight: 500">
 <span style="color: #9A9A94; display: block">Simple money for</span>
@@ -58,7 +91,7 @@
 <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5B616E"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l3 3 5-6"></path></svg>Free to open. No paperwork.</span>
 </div>
 
-<div style="flex: 1 1 260px; display: flex; flex-direction: column; align-items: flex-end; min-height: 500px">
+<div class="hero-photos-2" style="flex: 1 1 260px; display: flex; flex-direction: column; align-items: flex-end; min-height: 500px">
 <img src="{% static 'site/img/photo3.jpg' %}" alt="A city street at golden hour with a red double-decker bus" style="width: 260px; height: 250px; object-fit: cover; object-position: 50% 50%; display: block">
 <img src="{% static 'site/img/photo4.jpg' %}" alt="A hand holding a bank card over a laptop by a sunlit window" style="width: 170px; height: 190px; object-fit: cover; object-position: 60% 50%; display: block">
 </div>
@@ -67,18 +100,18 @@
 </section>
 
 <section id="product" style="background: #F6F5F1">
-<div style="max-width: 1280px; margin: 0 auto; padding: 88px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px">
+<div class="product" style="max-width: 1280px; margin: 0 auto; padding: 88px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px">
 <h2 style="margin: 0; font-size: 34px; font-weight: 500; letter-spacing: -0.03em"><span style="color: #9A9A94">One app,</span> everything your money needs</h2>
 <div>
 <div role="tablist" aria-label="Product views" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #DCDBD5; border-bottom: none; background: #FFFFFF">
 <button type="button" role="tab" id="tab-app" aria-selected="true">The Cedar app</button>
 <button type="button" role="tab" id="tab-ai" aria-selected="false">Cedar Assistant</button>
 </div>
-<div style="position: relative; height: 640px; overflow: hidden; border: 1px solid #DCDBD5; background: #C9A77C">
+<div class="stage" style="position: relative; height: 640px; overflow: hidden; border: 1px solid #DCDBD5; background: #C9A77C">
 <img src="{% static 'site/img/wall.jpg' %}" alt="" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block">
 
 <div id="view-app">
-<div role="img" aria-label="The Cedar Pay web app: balance, recent activity and a send money form" style="position: absolute; left: 5%; top: 48px; width: 66%; height: 560px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; overflow: hidden; display: flex; font-size: 12px; color: #16181D">
+<div class="mock-big" role="img" aria-label="The Cedar Pay web app: balance, recent activity and a send money form" style="position: absolute; left: 5%; top: 48px; width: 66%; height: 560px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; overflow: hidden; display: flex; font-size: 12px; color: #16181D">
 <div style="width: 52px; background: rgba(240,238,232,0.9); display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 18px">
 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 9h-4l5 7H4l5-7H5z"></path><path d="M12 18v4"></path></svg>
 <div style="width: 18px; height: 18px; border-radius: 5px; background: #16181D"></div>
@@ -105,13 +138,13 @@
 <span style="font-size: 15px; font-weight: 600">Send money</span>
 <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5B616E">To</span><div style="border: 1px solid #DCDBD5; border-radius: 8px; padding: 10px; background: #FFFFFF; font-weight: 500">Maria Lopez · ES</div></div>
 <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5B616E">You send</span><div style="border: 1px solid #DCDBD5; border-radius: 8px; padding: 10px; background: #FFFFFF; display: flex; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">250.00</span><span>USD</span></div></div>
-<div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5B616E">Maria gets</span><div style="border: 1px solid #DCDBD5; border-radius: 8px; padding: 10px; background: #FFFFFF; display: flex; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">[AMOUNT]</span><span>EUR</span></div></div>
-<div style="display: flex; justify-content: space-between; color: #5B616E"><span>Fee</span><span>[FEE]</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5B616E">Maria gets</span><div style="border: 1px solid #DCDBD5; border-radius: 8px; padding: 10px; background: #FFFFFF; display: flex; justify-content: space-between"><span style="font-weight: 600; font-size: 15px">229.40</span><span>EUR</span></div></div>
+<div style="display: flex; justify-content: space-between; color: #5B616E"><span>Fee</span><span>$1.99</span></div>
 <div style="display: flex; justify-content: space-between; color: #5B616E"><span>Arrives</span><span>In minutes</span></div>
 <div style="margin-top: auto; background: #16181D; color: #FFFFFF; border-radius: 8px; padding: 12px; text-align: center; font-weight: 500">Send $250.00</div>
 </div>
 </div>
-<div role="img" aria-label="Cedar Assistant chat answering a question about transfer times" style="position: absolute; right: 4%; top: 120px; width: 330px; height: 500px; background: #FFFFFF; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; color: #16181D">
+<div class="mock-card" role="img" aria-label="Cedar Assistant chat answering a question about transfer times" style="position: absolute; right: 4%; top: 120px; width: 330px; height: 500px; background: #FFFFFF; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; color: #16181D">
 <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #F0F0EC"><div style="display: flex; gap: 8px; align-items: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 9h-4l5 7H4l5-7H5z"></path><path d="M12 18v4"></path></svg><span style="font-weight: 600">Cedar Assistant</span></div><span style="color: #5B616E">×</span></div>
 <div style="flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px">
 <div style="align-self: flex-start; background: #F3F2EE; border-radius: 12px; padding: 10px 12px">Hi Sam! How can I help?</div>
@@ -125,7 +158,7 @@
 </div>
 
 <div id="view-ai" style="display:none">
-<div role="img" aria-label="The support team's inbox with an AI-drafted reply" style="position: absolute; left: 5%; top: 48px; width: 70%; height: 560px; background: rgba(255,255,255,0.9); border-radius: 14px; overflow: hidden; display: flex; font-size: 12px; color: #16181D">
+<div class="mock-big" role="img" aria-label="The support team's inbox with an AI-drafted reply" style="position: absolute; left: 5%; top: 48px; width: 70%; height: 560px; background: rgba(255,255,255,0.9); border-radius: 14px; overflow: hidden; display: flex; font-size: 12px; color: #16181D">
 <div style="width: 30%; border-right: 1px solid #E5E5E1; display: flex; flex-direction: column">
 <div style="padding: 16px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #F0F0EC">Your inbox · 4 open</div>
 <div style="padding: 12px 16px; background: #F3F2EE; display: flex; flex-direction: column; gap: 3px"><span style="font-weight: 600">Sam Carter</span><span style="color: #5B616E">Charged but transfer failed · 2m</span></div>
@@ -150,7 +183,7 @@
 <div style="margin-top: auto; background: #16181D; color: #FFFFFF; border-radius: 8px; padding: 11px; text-align: center; font-weight: 500">Approve and send</div>
 </div>
 </div>
-<div role="img" aria-label="The customer's chat showing the handoff to a person" style="position: absolute; right: 4%; top: 150px; width: 300px; background: #FFFFFF; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; color: #16181D">
+<div class="mock-card" role="img" aria-label="The customer's chat showing the handoff to a person" style="position: absolute; right: 4%; top: 150px; width: 300px; background: #FFFFFF; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; color: #16181D">
 <div style="display: flex; gap: 8px; align-items: center; padding: 14px 16px; border-bottom: 1px solid #F0F0EC"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 9h-4l5 7H4l5-7H5z"></path><path d="M12 18v4"></path></svg><span style="font-weight: 600">Cedar Assistant</span></div>
 <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
 <div style="align-self: flex-end; background: #16181D; color: #FFFFFF; border-radius: 12px; padding: 10px 12px; max-width: 85%; line-height: 1.45">I was charged $250 but the transfer failed. Where is my money?</div>
@@ -166,16 +199,16 @@
 </section>
 
 <section id="features">
-<div style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px">
+<div class="features" style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px">
 <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #16181D; padding-top: 18px"><h3 style="margin: 0; font-size: 20px; font-weight: 500">Instant transfers</h3><p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; color: #3F4450">Money arrives in seconds, with low, clear fees shown before you send.</p></div>
-<div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #16181D; padding-top: 18px"><h3 style="margin: 0; font-size: 20px; font-weight: 500">Savings goals</h3><p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; color: #3F4450">Set a goal, lock it if you like, and earn [RATE]% a year.</p></div>
+<div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #16181D; padding-top: 18px"><h3 style="margin: 0; font-size: 20px; font-weight: 500">Savings goals</h3><p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; color: #3F4450">Set a goal, lock it if you like, and watch it grow.</p></div>
 <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #16181D; padding-top: 18px"><h3 style="margin: 0; font-size: 20px; font-weight: 500">Card controls</h3><p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; color: #3F4450">Freeze, unfreeze or set limits on your card from the app.</p></div>
 <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #16181D; padding-top: 18px"><h3 style="margin: 0; font-size: 20px; font-weight: 500">Help in seconds</h3><p style="margin: 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 17px; line-height: 1.6; color: #3F4450">Cedar Assistant answers from our official policies and shows its source.</p></div>
 </div>
 </section>
 
-<section style="padding: 0 24px 88px">
-<div style="max-width: 1152px; margin: 0 auto; background: #16181D; color: #FFFFFF; padding: 56px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center">
+<section class="cta-wrap" style="padding: 0 24px 88px">
+<div class="cta" style="max-width: 1152px; margin: 0 auto; background: #16181D; color: #FFFFFF; padding: 56px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center">
 <h2 style="margin: 0; font-size: 40px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1"><span style="color: #9A9A94">Your money,</span><br>made simple.</h2>
 <a href="#" data-demo-only style="background: #FFFFFF; color: #16181D; text-decoration: none; padding: 15px 22px; border-radius: 6px; font-size: 17px">Open an account</a>
 </div>
@@ -183,7 +216,7 @@
 
 <footer style="border-top: 1px solid #EDEBE6">
 <div style="max-width: 1200px; margin: 0 auto; padding: 32px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; font-size: 14px; color: #5B616E">
-<span>© 2026 Cedar Pay · demo brand for a portfolio project · Licensed by [REGULATOR]</span>
+<span>© 2026 Cedar Pay · demo brand for a portfolio project · not a real bank</span>
 <div style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" data-demo-only style="color: #4A505C; text-decoration: none">Privacy</a><a href="#" data-demo-only style="color: #4A505C; text-decoration: none">Terms</a><a href="#" data-open-chat style="color: #4A505C; text-decoration: none">Support</a><a href="https://github.com/Pennymic81/cedar-support-copilot" style="color: #4A505C; text-decoration: none">GitHub</a></div>
 </div>
 </footer>

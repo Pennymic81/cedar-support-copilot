@@ -70,6 +70,14 @@
     "button.send{border:none;border-radius:10px;background:" + ACCENT + ";color:#fff;width:44px;cursor:pointer}" +
     "button.send:disabled{opacity:.5;cursor:default}" +
     ".sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}" +
+    // Phones: the chat fills the screen, and the launcher hides while it's open.
+    "@media (max-width:520px){" +
+    ".panel{inset:0;width:100%;max-width:none;height:100%;max-height:none;border:none;border-radius:0}" +
+    ".launcher.is-open{display:none}" +
+    ".head{padding:12px 12px 12px 16px;padding-top:max(12px,env(safe-area-inset-top))}" +
+    "form{padding-bottom:max(10px,env(safe-area-inset-bottom))}" +
+    "input{font-size:16px}" + // 16px stops iOS zooming in when the field is tapped
+    "}" +
     "</style>" +
     '<button class="launcher" aria-label="Open support chat" aria-expanded="false">' +
     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></button>' +
@@ -209,6 +217,7 @@
   var restored = false;
   function toggle(open) {
     panel.classList.toggle("open", open);
+    launcher.classList.toggle("is-open", open);
     launcher.setAttribute("aria-expanded", String(open));
     if (open) {
       if (!restored) { restored = true; restore(); }
